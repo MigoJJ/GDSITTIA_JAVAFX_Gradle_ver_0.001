@@ -1,0 +1,34 @@
+
+Prologue:
+
+In the ever-evolving world of healthcare technology, I find myself immersed in 
+the creation of an Electronic Medical Records (EMR) interface specifically designed 
+for physicians. My goal is to develop a simplified and user-friendly interface 
+that streamlines the process of medical recording, making it more efficient 
+and easily verifiable.
+
+With this interface, I aim to minimize the reliance on traditional input methods 
+such as mouse and keyboard, focusing instead on intuitive interactions that align 
+with the natural workflow of physicians. By reducing the time spent navigating 
+complex menus and inputting data, I hope to empower physicians to devote more 
+attention to their patients' care.
+
+One of the key features I intend to incorporate into this EMR interface is the 
+creation of letter formats. These formats will enable physicians to generate 
+standardized letters for their patients, documenting medical findings, treatment 
+plans, and other essential information. By automating this process, I aim to 
+relieve physicians of the burden of manually composing letters, allowing them 
+to devote more time to patient care.
+
+Through this project, I strive to bridge the gap between technology and healthcare, 
+assisting physicians in their vital work of medical recording. By providing a simple, 
+verifiable, and efficient interface, I believe we can enhance the quality of patient 
+care while alleviating some of the administrative burdens that physicians face.
+
+As I embark on this journey, I am excited about the potential impact that this 
+EMR interface can have on the medical field. By collaborating with physicians and 
+leveraging technology, we can revolutionize medical recording, making it a seamless 
+and integral part of the healthcare process.
+
+MigoJJ 2023.05.18
+

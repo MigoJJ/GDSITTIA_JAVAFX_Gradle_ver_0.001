@@ -1,0 +1,126 @@
+emr/
+├── src/
+│   └── main/
+│       ├── java/com/yourcompany/emr/
+│       │
+│       ├── app/
+│       │   └── EmrApplication.java
+│       │
+│       ├── config/
+│       │   └── SecurityConfig.java
+│       │
+│       ├── common/
+│       │   ├── util/DateUtil.java
+│       │   └── security/JwtUtil.java
+│       │
+│       ├── patient/
+│       │   ├── model/Patient.java
+│       │   ├── repository/PatientRepository.java
+│       │   ├── service/PatientService.java
+│       │   └── controller/PatientController.java
+│       │
+│       ├── endocrinology/                            # 💠 Main specialty package
+│       │   ├── diabetes/
+│       │   │   ├── model/DiabetesNote.java
+│       │   │   ├── repository/DiabetesRepository.java
+│       │   │   ├── service/DiabetesService.java
+│       │   │   └── controller/DiabetesController.java
+│       │   │
+│       │   ├── thyroid/
+│       │   │   ├── model/ThyroidNote.java
+│       │   │   ├── repository/ThyroidRepository.java
+│       │   │   ├── service/ThyroidService.java
+│       │   │   └── controller/ThyroidController.java
+│       │   │
+│       │   ├── lipid/
+│       │   │   ├── model/LipidNote.java
+│       │   │   ├── repository/LipidRepository.java
+│       │   │   ├── service/LipidService.java
+│       │   │   └── controller/LipidController.java
+│       │   │
+│       │   └── osteoporosis/
+│       │       ├── model/OsteoporosisNote.java
+│       │       ├── repository/OsteoporosisRepository.java
+│       │       ├── service/OsteoporosisService.java
+│       │       └── controller/OsteoporosisController.java
+│       │
+│       ├── laboratory/
+│       │   ├── model/LabResult.java
+│       │   ├── repository/LabResultRepository.java
+│       │   ├── service/LabResultService.java
+│       │   └── controller/LabResultController.java
+│       │
+│       ├── soapnote/
+│       │   ├── model/
+│       │   │   ├── ChiefComplaint.java
+│       │   │   ├── SubjectiveNote.java
+│       │   │   ├── ObjectiveNote.java
+│       │   │   ├── AssessmentNote.java
+│       │   │   └── PlanNote.java
+│       │   ├── repository/MedicalRecordRepository.java
+│       │   ├── service/MedicalRecordService.java
+│       │   └── controller/MedicalRecordController.java
+│       │
+│       ├── pastmedicalhistory/
+│       │   ├── model/PastMedicalHistory.java
+│       │   ├── repository/PastMedicalHistoryRepository.java
+│       │   ├── service/PastMedicalHistoryService.java
+│       │   └── controller/PastMedicalHistoryController.java
+│       │
+│       ├── followupplan/
+│       │   ├── model/FollowUpPlan.java
+│       │   ├── repository/FollowUpPlanRepository.java
+│       │   ├── service/FollowUpPlanService.java
+│       │   └── controller/FollowUpPlanController.java
+│
+│       ├── resources/
+│       │   ├── application.properties
+│       │   ├── db/
+│       │   │   ├── migrations/V1__init_schema.sql
+│       │   │   └── data.sql
+│       │   ├── static/
+│       │   │   ├── css/
+│       │   │   └── js/
+│       │   └── templates/
+│       │       ├── patient/
+│       │       ├── diabetes/
+│       │       ├── thyroid/
+│       │       ├── lipid/
+│       │       ├── osteoporosis/
+│       │       └── soap/
+│
+│       └── webapp/WEB-INF/web.xml
+│
+├── frontend/
+│   ├── public/
+│   └── src/
+│       ├── components/
+│       │   ├── PatientForm.jsx
+│       │   ├── LabResultPanel.jsx
+│       │   ├── DiabetesNoteForm.jsx
+│       │   ├── ThyroidNoteForm.jsx
+│       │   ├── LipidNoteForm.jsx
+│       │   ├── OsteoporosisNoteForm.jsx
+│       │   ├── FollowUpPlanForm.jsx
+│       └── pages/
+│           ├── PatientDashboard.jsx
+│           └── EncounterPage.jsx
+│
+├── docs/
+│   ├── architecture.md
+│   ├── features.md
+│   ├── api/openapi.yaml
+│   ├── user_manual/endocrinologist_guide.md
+│   └── database/schema.sql
+│
+├── data/
+│   ├── lab/
+│   ├── export/
+│   └── tmp/
+│
+├── build.gradle
+├── settings.gradle
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
+
