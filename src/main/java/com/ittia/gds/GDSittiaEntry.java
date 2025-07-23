@@ -71,10 +71,9 @@ public class GDSittiaEntry extends Application {
                 break;
             case "Ittia Start":
                 System.out.println("Launching ITTIA...");
-                launchGDSEMRFrame(); // Call the new method to launch GDSEMR_frame
-                // Optionally hide the current stage
-                // ((Stage) ((Button) event.getSource()).getScene().getWindow()).hide();
+                launchGDSEMRFrame();
                 break;
+
             case "Rescue":
                 System.out.println("Rescue action triggered.");
                 break;
@@ -124,16 +123,32 @@ public class GDSittiaEntry extends Application {
     /**
      * Launches the GDSEMR_frame application in a new stage.
      */
-    private void launchGDSEMRFrame() throws Exception {
-        // Create a new Stage for the GDSEMR_frame
-        Stage gdsemrStage = new Stage();
-        GDSEMR_frame.main(null); // Call the start method of GDSEMR_frame
+ // In GDSittiaEntry.java
 
-        // Optional: Hide the current stage (GDSittiaEntry) if you want to switch applications
-        // This line would need to be in the button's action handler or passed the primary stage
-        // primaryStage.hide(); // You would need to make primaryStage accessible here or pass it.
-                               // For simplicity, for now, they'll both be visible.
+    private void launchGDSEMRFrame() {
+       try {
+          // 1) Create a fresh instance of your JavaFX app class
+          GDSEMR_frame emrApp = new GDSEMR_frame();
+          
+          // 2) Create a new Stage
+          Stage emrStage = new Stage();
+          
+          // 3) Manually invoke its start(...) method
+          emrApp.start(emrStage);
+          
+          // (Optional) hide the launcher window:
+          // Stage launcher = (Stage) someButton.getScene().getWindow();
+          // launcher.hide();
+       } catch (Exception ex) {
+          ex.printStackTrace();
+          Alert errorAlert = new Alert(AlertType.ERROR);
+          errorAlert.setTitle("Error");
+          errorAlert.setHeaderText("Could not launch EMR");
+          errorAlert.setContentText(ex.getMessage());
+          errorAlert.showAndWait();
+       }
     }
+
 
 
     public static void main(String[] args) {

@@ -1,199 +1,207 @@
 package com.ittia.gds;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import javafx.application.Application;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.stage.Stage;
 
-import javax.swing.JFrame;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-
-import com.ittia.gds.ui.mainframe.changestring.EMRProcessor;
-import com.ittia.gds.ui.mainframe.format.MainFrameFormat;
-
-/**
- * Main application window for the GDS EMR interface.
- * Ensures all text components use Consolas font explicitly via UIManager.
- */
-public class GDSEMR_frame {
-    private static final int FRAME_WIDTH = 1275;
-    private static final int FRAME_HEIGHT = 1020;
-    // CONSOLAS_FONT and CONSOLAS_BOLD_FONT are no longer strictly needed here
-    // as UIManager sets default fonts, and MainFrameFormat handles bold.
-    // Kept for potential future direct uses if desired, but not for global application.
-    private static final Font CONSOLAS_FONT = new Font("DejaVu Sans Mono", Font.PLAIN, 11);
-    private static final Color INPUT_TEXT_COLOR = new Color(0, 0, 0); // Black for input text
-    public static JFrame frame;
-    public static JTextArea[] textAreas;    public static JTextArea tempOutputArea;
-    private JTextField gradientInputField;
+public class GDSEMR_frame extends Application {
+    private static final double FRAME_WIDTH = 1350;
+    private static final double FRAME_HEIGHT = 900;
     public static final String[] TEXT_AREA_TITLES = {
-            "CC>", "PI>", "ROS>", "PMH>", "S>",
-            "O>", "Physical Exam>", "A>", "P>", "Comment>"
+        "CC>", "PI>", "ROS>", "PMH>", "S>",
+        "O>", "Physical Exam>", "A>", "P>", "Comment>"
     };
+    public static TextArea[] textAreas;
+    public static TextArea tempOutputArea;
+    public static TextField gradientInputField;
 
-    /**
-     * Sets the default font for various Swing components to Consolas using UIManager.
-     * This method should be called once at the application startup.
-     */
-    public static void setGlobalConsolasFont() {
-        Font conFont = new Font("DejaVu Sans Mono", Font.PLAIN, 11);
-        UIManager.put("Button.font", new Font("DejaVu Sans Mono", Font.BOLD, 11)); // Buttons will use bold Consolas
-        UIManager.put("Label.font", conFont);
-        UIManager.put("TextField.font", conFont);
-        UIManager.put("TextArea.font", conFont);
-        UIManager.put("Panel.font", conFont); // Panels themselves don't display text, but can affect contained components
-        UIManager.put("TitledBorder.font", conFont);
-        UIManager.put("Table.font", conFont);
-        UIManager.put("List.font", conFont);
-        UIManager.put("Menu.font", conFont);
-        UIManager.put("MenuItem.font", conFont);
-        UIManager.put("ComboBox.font", conFont);
-        UIManager.put("CheckBox.font", conFont);
-        UIManager.put("RadioButton.font", conFont);
-        UIManager.put("TabbedPane.font", conFont);
-        UIManager.put("Viewport.font", conFont); // Used by JScrollPane's viewport
-        // Add other components here as needed to ensure complete consistency
-    }
+    @Override
+    public void start(Stage primaryStage) {
+        textAreas = new TextArea[TEXT_AREA_TITLES.length];
+        BooleanProperty cleared = new SimpleBooleanProperty(false);
 
-    /**
-     * Constructor for GDSEMR_frame. Initializes core UI components.
-     */
-    public GDSEMR_frame() {
-        frame = new JFrame("GDS EMR Interface for Physician");
-        textAreas = new JTextArea[TEXT_AREA_TITLES.length];
-        tempOutputArea = new JTextArea();
-        gradientInputField = MainFrameFormat.createGradientTextField(20);
+        for (int i = 0; i < TEXT_AREA_TITLES.length; i++) {
+            TextArea ta = new TextArea();
+            ta.setPromptText(TEXT_AREA_TITLES[i]);
+            ta.setFont(Font.font("Consolas", 13));
+            ta.setWrapText(true);
+            ta.setPrefRowCount(3);
+            ta.setStyle("-fx-border-color: #e0e0e0; -fx-border-width: 1px; -fx-border-radius: 5px;");
 
-        // No need to set font here, UIManager has already handled it.
-        gradientInputField.setForeground(INPUT_TEXT_COLOR);
-        tempOutputArea.setForeground(INPUT_TEXT_COLOR);
-    }
+            ta.focusedProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal && !cleared.get()) {
+                    for (TextArea t : textAreas) {
+                        if (t != null) t.clear();
+                    }
+                    cleared.set(true);
+                }
+            });
 
-    /**
-     * Creates and displays the GUI.
-     */
-    public void createAndShowGUI() {
-        configureFrame();
-        initializePanels();
-        registerListeners(); // Listeners remain important for functionality
-        frame.setVisible(true);
-    }
+            // Abbreviation handling example (customize as needed)
+            ta.setOnKeyReleased(evt -> {
+                if (evt.getCode() == KeyCode.SPACE) {
+                    // Your abbreviation handling logic here
+                }
+            });
 
-    /**
-     * Configures the main JFrame properties.
-     */
-    private void configureFrame() {
-        frame.setSize(FRAME_WIDTH, FRAME_HEIGHT);
-        frame.setLocation(348, 60);
-        frame.setUndecorated(true);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    }
+            // Function key and double-click handlers (placeholders)
+            ta.setOnKeyPressed(evt -> { /* ... */ });
+            ta.setOnMouseClicked(evt -> { /* ... */ });
 
-    /**
-     * Initializes and adds all major panels to the frame.
-     */
-    private void initializePanels() {
-        MainFrameFormat format = new MainFrameFormat();
-        frame.add(format.createNorthPanel(), BorderLayout.NORTH);
-        frame.add(format.createSouthPanel(), BorderLayout.SOUTH);
-        frame.add(format.createCenterPanel(textAreas, TEXT_AREA_TITLES), BorderLayout.CENTER);
-        frame.add(format.createWestPanel(tempOutputArea, gradientInputField), BorderLayout.WEST);
-    }
-
-    /**
-     * Registers all necessary listeners. Font setting is now primarily handled by UIManager.
-     */
-    private void registerListeners() {
-        for (int i = 0; i < textAreas.length; i++) {
-            if (textAreas[i] != null) {
-                // Font is already set via UIManager. No need for explicit setFont or double-check here.
-                textAreas[i].setForeground(INPUT_TEXT_COLOR);
-                textAreas[i].getDocument().addDocumentListener(new EMRProcessor.EMRDocumentListener(textAreas, tempOutputArea));
-                textAreas[i].addMouseListener(new DoubleClickMouseListener());
-                textAreas[i].addKeyListener(new FunctionKeyPress());
-            }
+            textAreas[i] = ta; // Append to the array for later access
         }
-    }
 
-    /**
-     * Updates the text of a specific text area.
-     * @param index The index of the text area to update.
-     * @param text The text to append.
-     */
-    public static void setTextAreaText(int index, String text) {
-        if (textAreas == null || index < 0 || index >= textAreas.length || textAreas[index] == null) {
-            System.err.println("Invalid text area index or text areas not initialized for setTextAreaText.");
-            return;
-        }
-        SwingUtilities.invokeLater(() -> {
-            textAreas[index].append(text);
-        });
-    }
+        // Output area on the right, styled
+        tempOutputArea = new TextArea();
+        tempOutputArea.setEditable(true);
+        tempOutputArea.setPromptText("Output");
+        tempOutputArea.setFont(Font.font("Consolas", 13));
+        tempOutputArea.setWrapText(true);
+        tempOutputArea.setStyle("-fx-border-color: #d0d0d0; -fx-border-width: 1px; -fx-border-radius: 5px;");
 
-    /**
-     * Updates the temporary output area.
-     * @param text The text to set in the output area.
-     */
-    public static void updateTempOutputArea(String text) {
-        if (tempOutputArea != null) {
-            SwingUtilities.invokeLater(() -> {
-                tempOutputArea.setText(text);
+        gradientInputField = new TextField();
+        gradientInputField.setPromptText("Input command here...");
+        gradientInputField.setFont(Font.font("Consolas", 13));
+        gradientInputField.setStyle("-fx-border-color: #d0d0d0; -fx-border-width: 1px; -fx-border-radius: 5px; -fx-background-color: #f8f8f8;");
+
+        // Listening: Option 1 - Mirror all textareas' content into output on change
+        for (int i = 0; i < TEXT_AREA_TITLES.length; i++) {
+            textAreas[i].textProperty().addListener((obs, oldVal, newVal) -> {
+                StringBuilder sb = new StringBuilder();
+                for (int j = 0; j < TEXT_AREA_TITLES.length; j++) {
+                    String content = textAreas[j].getText();
+                    if (content != null && !content.trim().isEmpty()) {
+                        sb.append(TEXT_AREA_TITLES[j]).append(" ").append(content.trim()).append("\n\n");
+                    }
+                }
+                tempOutputArea.setText(sb.toString().trim());
             });
         }
-    }
 
-    /**
-     * Handles function key press events.
-     */
-    private static class FunctionKeyPress extends KeyAdapter {
-        @Override
-        public void keyPressed(KeyEvent e) {
-            int keyCode = e.getKeyCode();
-            if (keyCode >= KeyEvent.VK_F1 && keyCode <= KeyEvent.VK_F12) {
-                String functionKeyMessage = "F" + (keyCode - KeyEvent.VK_F1 + 1) + " key pressed - Action executed.";
-                // You can add an action here, e.g., update tempOutputArea:
-                // updateTempOutputArea(functionKeyMessage);
-            }
+        // Left Grid: label+area groups
+        GridPane leftGrid = new GridPane();
+        leftGrid.setHgap(15);
+        leftGrid.setVgap(10);
+        leftGrid.setPadding(new Insets(15));
+        leftGrid.setStyle("-fx-background-color: #f5f5f5; -fx-border-radius: 10px; -fx-background-radius: 10px; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 0);");
+
+        for (int i = 0; i < TEXT_AREA_TITLES.length; i++) {
+            Label lbl = new Label(TEXT_AREA_TITLES[i]);
+            lbl.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+            lbl.setTextFill(Color.web("#333333"));
+            VBox section = new VBox(3, lbl, textAreas[i]);
+            VBox.setVgrow(textAreas[i], Priority.ALWAYS);
+            GridPane.setConstraints(section, i % 2, i / 2);
+            leftGrid.getChildren().add(section);
         }
-    }
+        ColumnConstraints col1 = new ColumnConstraints();
+        col1.setHgrow(Priority.ALWAYS);
+        ColumnConstraints col2 = new ColumnConstraints();
+        col2.setHgrow(Priority.ALWAYS);
+        leftGrid.getColumnConstraints().addAll(col1, col2);
 
-    /**
-     * Handles double-click events on text areas.
-     */
-    private static class DoubleClickMouseListener extends MouseAdapter {
-        @Override
-        public void mouseClicked(MouseEvent e) {
-            if (e.getClickCount() == 2) {
-                JTextArea source = (JTextArea) e.getSource();
-                String text = source.getText();
-                // You can add an action here, e.g., copy text to input field or process it
-                // gradientInputField.setText(text);
-            }
+        // Right: output+input w/ gradient
+        VBox rightBox = new VBox(15);
+        rightBox.setPadding(new Insets(15));
+        rightBox.setPrefWidth(450);
+        LinearGradient gradient = new LinearGradient(
+            0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+            new Stop(0, Color.rgb(230, 245, 230)),
+            new Stop(1, Color.rgb(200, 230, 200))
+        );
+        rightBox.setBackground(
+            new javafx.scene.layout.Background(
+                new javafx.scene.layout.BackgroundFill(gradient, new javafx.scene.layout.CornerRadii(10), Insets.EMPTY)
+            )
+        );
+        rightBox.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 0);");
+        ScrollPane outSp = new ScrollPane(tempOutputArea);
+        outSp.setFitToWidth(true);
+        outSp.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+        VBox.setVgrow(outSp, Priority.ALWAYS);
+        rightBox.getChildren().addAll(outSp, gradientInputField);
+
+        // Split pane layout
+        SplitPane splitPane = new SplitPane();
+        splitPane.getItems().addAll(leftGrid, rightBox);
+        splitPane.setDividerPositions(0.68);
+
+        // Button panels
+        HBox northPanel = new HBox(15);
+        northPanel.setPadding(new Insets(10, 15, 10, 15));
+        northPanel.setAlignment(Pos.CENTER_RIGHT);
+        northPanel.setStyle("-fx-background-color: #e8e8e8;");
+
+        HBox southPanel = new HBox(15);
+        southPanel.setPadding(new Insets(10, 15, 10, 15));
+        southPanel.setAlignment(Pos.CENTER_LEFT);
+        southPanel.setStyle("-fx-background-color: #e8e8e8;");
+
+        String[] btns = {"Save", "Load", "Clear", "Submit"};
+        for (String name : btns) {
+            Button b1 = new Button(name);
+            b1.setPrefWidth(80);
+            b1.setStyle("-fx-background-color: #5cb85c; -fx-text-fill: white; -fx-font-weight: bold; " +
+                       "-fx-border-radius: 5px; -fx-background-radius: 5px;");
+            b1.setOnMouseEntered(e -> b1.setStyle("-fx-background-color: #4cae4c; -fx-text-fill: white; -fx-font-weight: bold; " +
+                       "-fx-border-radius: 5px; -fx-background-radius: 5px;"));
+            b1.setOnMouseExited(e -> b1.setStyle("-fx-background-color: #5cb85c; -fx-text-fill: white; -fx-font-weight: bold; " +
+                       "-fx-border-radius: 5px; -fx-background-radius: 5px;"));
+            // placeholder: attach your handler here, e.g., MainFrame_Button_north_south.EMR_B_1entryentry(name, "north"));
+            northPanel.getChildren().add(b1);
+
+            Button b2 = new Button(name);
+            b2.setPrefWidth(80);
+            b2.setStyle("-fx-background-color: #0275d8; -fx-text-fill: white; -fx-font-weight: bold; " +
+                       "-fx-border-radius: 5px; -fx-background-radius: 5px;");
+            b2.setOnMouseEntered(e -> b2.setStyle("-fx-background-color: #025aa5; -fx-text-fill: white; -fx-font-weight: bold; " +
+                       "-fx-border-radius: 5px; -fx-background-radius: 5px;"));
+            b2.setOnMouseExited(e -> b2.setStyle("-fx-background-color: #0275d8; -fx-text-fill: white; -fx-font-weight: bold; " +
+                       "-fx-border-radius: 5px; -fx-background-radius: 5px;"));
+            // placeholder: attach your handler here, e.g., MainFrame_Button_north_south.EMR_B_1entryentry(name, "south"));
+            southPanel.getChildren().add(b2);
         }
+
+        // Root pane
+        BorderPane root = new BorderPane();
+        root.setCenter(splitPane);
+        root.setTop(northPanel);
+        root.setBottom(southPanel);
+        root.setStyle("-fx-background-color: #ffffff;");
+
+        Scene scene = new Scene(root, FRAME_WIDTH, FRAME_HEIGHT);
+        primaryStage.setTitle("GDS EMR Interface for Physician - Enhanced");
+        primaryStage.setScene(scene);
+        primaryStage.setOnCloseRequest(e -> System.exit(0));
+        primaryStage.show();
     }
 
-    /**
-     * Launches the application.
-     * @param args Command line arguments.
-     */
     public static void main(String[] args) {
-        // IMPORTANT: Set global font BEFORE creating any Swing components
-        setGlobalConsolasFont();
-
-        SwingUtilities.invokeLater(() -> {
-            GDSEMR_frame emrFrame = new GDSEMR_frame();
-            try {
-                emrFrame.createAndShowGUI();
-            } catch (Exception e) {
-                System.err.println("An error occurred during application startup:");
-                e.printStackTrace();
-            }
-        });
+        launch(args);
     }
 }
