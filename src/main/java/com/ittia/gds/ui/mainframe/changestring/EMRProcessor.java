@@ -3,13 +3,10 @@ package com.ittia.gds.ui.mainframe.changestring;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -18,41 +15,47 @@ import javax.swing.JTextArea;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import com.ittia.gds.ui.mainframe.changestring.abbreviation.DbManager;
 import com.ittia.gds.ui.mainframe.file.File_copy;
 
+
 public class EMRProcessor {
-    private static final Map<String, String> REPLACEMENTS = new HashMap<>();
+    // Make REPLACEMENTS non-final if you want to update it dynamically,
+    // but for initial load, it can remain static.
+    private static Map<String, String> REPLACEMENTS; // Now loaded from DB
     private static final String[] TITLES = {"CC>", "PI>", "ROS>", "PMH>", "S>", "O>", "Physical Exam>", "A>", "P>", "Comment>"};
-    private static final String FILE_PATH = com.ittia.gds.EntryDir.dbDir + "/chartplate/filecontrol/database/extracteddata.txt";
+    // Removed FILE_PATH since we are using DB
     private static final String BACKUP_PATH = com.ittia.gds.EntryDir.dbDir + File.separator + "tripikata" + File.separator + "rescue" + File.separator + "backup";
     private static final String TEMP_BACKUP_PATH = com.ittia.gds.EntryDir.dbDir + File.separator + "tripikata" + File.separator + "rescue" + File.separator + "backuptemp";
 
+    // Add a DbManager instance
+    private static DbManager dbManager;
+
+    // Static initializer to load abbreviations from the database
     static {
-        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith("replacements.put(")) {
-                    String[] parts = line.split("\"");
-                    if (parts.length >= 4) {
-                        REPLACEMENTS.put(parts[1], parts[3]);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Error loading abbreviations: " + e.getMessage());
-        }
+        // Ensure EntryDir.dbDir is accessible here.
+        // You might need to pass EntryDir.dbDir to a constructor
+        // or a static initialization method if it's not available in static context.
+        // For simplicity, assuming EntryDir.dbDir is available.
+        dbManager = new DbManager(com.ittia.gds.EntryDir.dbDir);
+        REPLACEMENTS = dbManager.getAllAbbreviations();
+        
+        // --- IMPORTANT: Initial Data Migration (Run ONLY ONCE) ---
+        // If you still have your old extracteddata.txt and want to import
+        // its contents into the new SQLite DB, uncomment and run the line below once.
+        // After successful migration, you can comment it out again.
+        // dbManager.importFromOldFile(com.ittia.gds.EntryDir.dbDir + "/chartplate/filecontrol/database/extracteddata.txt");
+        // REPLACEMENTS = dbManager.getAllAbbreviations(); // Reload after import
+        // ---------------------------------------------------------
     }
 
     public static String processText(String text) {
-        // Handle special abbreviations
+        // Handle special abbreviations by calling the transformer class
         if (text.contains(":(")) {
-            text = processAbbreviation(text);
+            text = EMRTextTransformer.processAbbreviation(text);
         } else if (text.contains(":>")) {
-            text = processPrescription(text);
+            text = EMRTextTransformer.processPrescription(text);
         }
-
-        // Replace current date placeholder
-        text = text.replace(":cd ", Date_current.main("d"));
 
         // Perform bulk replacements
         for (Map.Entry<String, String> entry : REPLACEMENTS.entrySet()) {
@@ -62,53 +65,6 @@ public class EMRProcessor {
         // Organize titles
         text = organizeTitles(text);
         return "  " + text;
-    }
-
-    private static String processAbbreviation(String word) {
-        String[] wordArray = word.split(" ");
-        for (int i = 0; i < wordArray.length; i++) {
-            if (wordArray[i].contains(":(")) {
-                String replacement = wordArray[i];
-                if (replacement.contains("d")) {
-                    replacement = replacement.replace("d", "-day ago :cd )").replace(":(", " (onset ");
-                } else if (replacement.contains("w")) {
-                    replacement = replacement.replace("w", "-week ago :cd )").replace(":(", " (onset ");
-                } else if (replacement.contains("m")) {
-                    replacement = replacement.replace("m", "-month ago :cd )").replace(":(", " (onset ");
-                } else if (replacement.contains("y")) {
-                    replacement = replacement.replace("y", "-year ago :cd )").replace(":(", " (onset ");
-                } else {
-                    return word;
-                }
-                wordArray[i] = replacement;
-                return String.join(" ", wordArray);
-            }
-        }
-        return word;
-    }
-
-    private static String processPrescription(String word) {
-        String[] wordArray = word.split(" ");
-        StringBuilder retWord = new StringBuilder();
-        for (String w : wordArray) {
-            if (w.contains(":>")) {
-                if (w.contains("1")) {
-                    w = w.replace(":>1", " mg 1 tab p.o. q.d.");
-                } else if (w.contains("2")) {
-                    w = w.replace(":>2", " mg 1 tab p.o. b.i.d.");
-                } else if (w.contains("3")) {
-                    w = w.replace(":>3", " mg 1 tab p.o. t.i.d.");
-                } else if (w.contains(":>0")) {
-                    w = w.replace(":>0", " without medications");
-                } else if (w.contains(":>4")) {
-                    w = w.replace(":>4", " with medications");
-                } else {
-                    return retWord.toString().trim();
-                }
-            }
-            retWord.append(w).append(" ");
-        }
-        return retWord.toString().trim();
     }
 
     private static String organizeTitles(String text) {
@@ -158,6 +114,7 @@ public class EMRProcessor {
         File_copy.main(BACKUP_PATH, TEMP_BACKUP_PATH);
     }
 
+    // Inner class EMRDocumentListener remains largely the same
     public static class EMRDocumentListener implements DocumentListener {
         private final JTextArea[] textAreas;
         private final JTextArea tempOutputArea;
@@ -190,5 +147,16 @@ public class EMRProcessor {
                 e.printStackTrace();
             }
         }
+    }
+
+    // Public method to get the DbManager instance (useful for other parts of your app)
+    public static DbManager getDbManager() {
+        return dbManager;
+    }
+
+    // Method to force reload abbreviations from DB (if you modify them at runtime)
+    public static void reloadAbbreviations() {
+        REPLACEMENTS = dbManager.getAllAbbreviations();
+        System.out.println("Abbreviations reloaded from database.");
     }
 }

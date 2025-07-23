@@ -18,10 +18,10 @@ public final class EntryDir {
     private static final Path basePath = "prod".equals(ENV) ? CURRENT_DIR : CURRENT_DIR.resolve("src");
 
     // --- Application Directory Paths (Created on Class Load) ---
-    public static final Path HOME_DIR = create(basePath.resolve("je/pense/doro"));
+    public static final Path HOME_DIR = create(basePath.resolve("com/ittia/gds"));
     public static final Path BACKUP_DIR = create(HOME_DIR.resolve("tripikata/rescue"));
     public static final Path SUPPORT_DIR = create(HOME_DIR.resolve("support/EMR_support_Folder"));
-    public static final Path dbDir = create(HOME_DIR.resolve("chartplate/filecontrol/database"));
+    public static final Path dbDir = create(HOME_DIR.resolve("ui/mainframe/changestring/abbriviation"));
 
     /**
      * Private helper to create a directory and return its path.
