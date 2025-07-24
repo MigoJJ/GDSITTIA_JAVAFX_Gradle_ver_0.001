@@ -1,82 +1,85 @@
 package com.ittia.gds.db;
 
+import com.ittia.gds.ui.model.Abbreviation;
+
 import java.io.File;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 
 public class DatabaseManager {
-    // Path relative to the resources folder
-	private static final String DB_PATH = System.getProperty("user.dir") + "/src/main/resources/db/abbreviations.db";
-	private static final String DB_URL = "jdbc:sqlite:" + DB_PATH;
+
+    private static final String DB_PATH = "jdbc:sqlite:" + System.getProperty("user.dir") + "/src/main/resources/db/abbreviations.db";
 
     public DatabaseManager() {
-        ensureDbDirectoryExists();  // Create directory if it doesn't exist
-        createTableIfNotExists();
+        initializeDatabase();
     }
 
-    private void ensureDbDirectoryExists() {
-        File dbDir = new File("src/main/resources/db");
+    private void initializeDatabase() {
+        File dbDir = new File(System.getProperty("user.dir") + "/src/main/resources/db");
         if (!dbDir.exists()) {
-            dbDir.mkdirs();  // Create all necessary parent directories
+            boolean created = dbDir.mkdirs();
+            if (!created) {
+                System.err.println("Failed to create directory: " + dbDir.getAbsolutePath());
+                return;
+            }
         }
-    }
-    private Connection connect() throws SQLException {
-        return DriverManager.getConnection(DB_URL);
-    }
 
-    private void createTableIfNotExists() {
-        String sql = """
-            CREATE TABLE IF NOT EXISTS abbreviations (
-                key TEXT PRIMARY KEY NOT NULL,
-                value TEXT NOT NULL
-            );""";
-
-        try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
+        try (Connection conn = DriverManager.getConnection(DB_PATH);
+             Statement stmt = conn.createStatement()) {
+            String sql = "CREATE TABLE IF NOT EXISTS abbreviations ("
+                       + "key TEXT PRIMARY KEY, "
+                       + "value TEXT NOT NULL)";
             stmt.execute(sql);
         } catch (SQLException e) {
-            System.err.println("Database error on table creation: " + e.getMessage());
+            System.err.println("Failed to initialize database: " + e.getMessage());
+        }
+    }
+
+    public void addOrUpdateAbbreviation(String key, String value) {
+        // Ensure consistent key formatting for DB storage
+        String formattedKey = key.startsWith(":") ? key : ":" + key;
+        formattedKey = formattedKey.endsWith(" ") ? formattedKey : formattedKey + " ";
+
+        try (Connection conn = DriverManager.getConnection(DB_PATH);
+             PreparedStatement pstmt = conn.prepareStatement("INSERT OR REPLACE INTO abbreviations (key, value) VALUES (?, ?)")) {
+            pstmt.setString(1, formattedKey);
+            pstmt.setString(2, value);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Failed to add/update abbreviation in database: " + e.getMessage());
+        }
+    }
+
+    public void deleteAbbreviation(String key) {
+        String formattedKey = key.startsWith(":") ? key : ":" + key;
+        formattedKey = formattedKey.endsWith(" ") ? formattedKey : formattedKey + " ";
+
+        try (Connection conn = DriverManager.getConnection(DB_PATH);
+             PreparedStatement pstmt = conn.prepareStatement("DELETE FROM abbreviations WHERE key = ?")) {
+            pstmt.setString(1, formattedKey);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Failed to remove abbreviation from database: " + e.getMessage());
         }
     }
 
     public Map<String, String> getAllAbbreviations() {
         Map<String, String> abbreviations = new HashMap<>();
-        String sql = "SELECT key, value FROM abbreviations";
-
-        try (Connection conn = connect();
+        try (Connection conn = DriverManager.getConnection(DB_PATH);
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-
+             ResultSet rs = stmt.executeQuery("SELECT key, value FROM abbreviations")) {
             while (rs.next()) {
                 abbreviations.put(rs.getString("key"), rs.getString("value"));
             }
         } catch (SQLException e) {
-            System.err.println("Database error fetching all abbreviations: " + e.getMessage());
+            System.err.println("Failed to retrieve all abbreviations from database: " + e.getMessage());
         }
         return abbreviations;
-    }
-
-    public void addOrUpdateAbbreviation(String key, String value) {
-        // "INSERT OR REPLACE" is an SQLite-specific command that simplifies add/update logic.
-        String sql = "INSERT OR REPLACE INTO abbreviations (key, value) VALUES (?, ?)";
-
-        try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, key.toLowerCase());
-            pstmt.setString(2, value);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Database error adding/updating abbreviation: " + e.getMessage());
-        }
-    }
-
-    public void deleteAbbreviation(String key) {
-        String sql = "DELETE FROM abbreviations WHERE key = ?";
-
-        try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, key.toLowerCase());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Database error deleting abbreviation: " + e.getMessage());
-        }
     }
 }

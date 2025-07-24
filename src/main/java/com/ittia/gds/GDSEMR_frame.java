@@ -1,5 +1,7 @@
 package com.ittia.gds;
 
+import com.ittia.gds.db.DatabaseManager;
+import com.ittia.gds.ui.mainframe.changestring.AbbreviationManagerUI;
 import com.ittia.gds.ui.mainframe.changestring.AbbreviationsMain;
 
 import javafx.application.Application;
@@ -38,16 +40,13 @@ public class GDSEMR_frame extends Application {
     };
     public static TextArea[] textAreas;
     public static TextArea tempOutputArea;
-    public static TextField gradientInputField; // This field is declared but not used in the current code
+    public static TextField gradientInputField;
 
     @Override
     public void start(Stage primaryStage) {
-        // Initialize the textAreas array first
         textAreas = new TextArea[TEXT_AREA_TITLES.length];
         BooleanProperty cleared = new SimpleBooleanProperty(false);
 
-        // 1. CONFIGURE THE 10 INPUT TEXT AREAS (for the right side)
-        // This loop populates the textAreas array with actual TextArea objects
         for (int i = 0; i < TEXT_AREA_TITLES.length; i++) {
             TextArea ta = new TextArea();
             ta.setPromptText(TEXT_AREA_TITLES[i]);
@@ -57,34 +56,34 @@ public class GDSEMR_frame extends Application {
             ta.setStyle("-fx-border-color: #e0e0e0; -fx-border-width: 1px; -fx-border-radius: 5px;");
             ta.focusedProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal && !cleared.get()) {
-                    // Only clear if not already cleared for the current session
                     for (TextArea t : textAreas) {
                         if (t != null) t.clear();
                     }
                     cleared.set(true);
                 }
             });
-            textAreas[i] = ta; // Assign the created TextArea to the array
+            textAreas[i] = ta;
         }
 
-        // 2. CONFIGURE THE SINGLE OUTPUT AREA (for the left side)
         tempOutputArea = new TextArea();
         tempOutputArea.setEditable(true);
         tempOutputArea.setPromptText("Output");
         tempOutputArea.setFont(Font.font("Consolas", 13));
         tempOutputArea.setWrapText(true);
-        tempOutputArea.setPrefRowCount(40); // Set preferred row count to 40
+        tempOutputArea.setPrefRowCount(40);
         tempOutputArea.setStyle("-fx-border-color: #d0d0d0; -fx-border-width: 1px; -fx-border-radius: 5px;");
 
-        // --- FIX START ---
-        // Instantiate GDSEMR_Abbreviations *AFTER* textAreas and tempOutputArea are fully initialized.
-        // This ensures that when GDSEMR_Abbreviations tries to attach listeners,
-        // all elements in textAreas are actual TextArea objects, not null.
-        AbbreviationsMain abbreviationHandler = new AbbreviationsMain(textAreas, tempOutputArea);
-        // --- FIX END ---
+        // --- NEW ABBREVIATION SYSTEM INTEGRATION ---
+        DatabaseManager dbManager = new DatabaseManager();
 
-        // 3. SET UP THE LISTENER for combining text into the output area
-        // This listener should remain as it handles the overall compilation of text.
+        // Pass TEXT_AREA_TITLES to AbbreviationsMain constructor
+        AbbreviationsMain abbreviationHandler = new AbbreviationsMain(textAreas, tempOutputArea, TEXT_AREA_TITLES);
+
+        AbbreviationManagerUI abbreviationManagerUI = new AbbreviationManagerUI(abbreviationHandler, dbManager);
+        // --- END NEW ABBREVIATION SYSTEM INTEGRATION ---
+
+        // The listener for combining text into the output area remains.
+        // This listener is conceptually distinct from the abbreviation expansion.
         for (TextArea ta : textAreas) {
             ta.textProperty().addListener((obs, oldVal, newVal) -> {
                 StringBuilder sb = new StringBuilder();
@@ -98,7 +97,6 @@ public class GDSEMR_frame extends Application {
             });
         }
 
-        // 4. BUILD THE RIGHT PANE (Grid of 10 input areas)
         GridPane rightInputGrid = new GridPane();
         rightInputGrid.setHgap(15);
         rightInputGrid.setVgap(10);
@@ -116,22 +114,19 @@ public class GDSEMR_frame extends Application {
             rightInputGrid.getChildren().add(section);
         }
 
-        // Column constraints (2 columns)
         ColumnConstraints col1 = new ColumnConstraints();
         col1.setHgrow(Priority.ALWAYS);
         ColumnConstraints col2 = new ColumnConstraints();
         col2.setHgrow(Priority.ALWAYS);
         rightInputGrid.getColumnConstraints().addAll(col1, col2);
 
-        // <--- Added row constraints for 5 rows to maximize height usage -->
         for (int i = 0; i < 5; i++) {
             RowConstraints rc = new RowConstraints();
             rc.setVgrow(Priority.ALWAYS);
-            rc.setPercentHeight(20); // Each row takes 20% to fill 100% vertically
+            rc.setPercentHeight(20);
             rightInputGrid.getRowConstraints().add(rc);
         }
 
-        // 5. BUILD THE LEFT PANE (Single output area)
         VBox leftOutputPane = new VBox();
         leftOutputPane.setPadding(new Insets(15));
         LinearGradient gradient = new LinearGradient(
@@ -145,26 +140,22 @@ public class GDSEMR_frame extends Application {
         ScrollPane outSp = new ScrollPane(tempOutputArea);
         outSp.setFitToWidth(true);
         outSp.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
-        VBox.setVgrow(outSp, Priority.ALWAYS); // Ensure vertical growing
+        VBox.setVgrow(outSp, Priority.ALWAYS);
         leftOutputPane.getChildren().add(outSp);
 
-        // 6. ASSEMBLE THE SPLIT PANE
         SplitPane splitPane = new SplitPane();
         splitPane.getItems().addAll(leftOutputPane, rightInputGrid);
-        splitPane.setDividerPositions(0.5); // Set 50:50 width ratio
+        splitPane.setDividerPositions(0.5);
 
-        // 7. BUILD BUTTONS AND ROOT PANE
         HBox northPanel = new HBox(15);
         northPanel.setPadding(new Insets(10, 15, 10, 15));
         northPanel.setAlignment(Pos.CENTER_RIGHT);
         northPanel.setStyle("-fx-background-color: #e8e8e8;");
 
-     // Add the new Manage Abbreviations button
         Button manageAbbrBtn = new Button("Manage Abbreviations");
         manageAbbrBtn.setStyle("-fx-background-color: #f0ad4e; -fx-text-fill: white; -fx-font-weight: bold;");
-        manageAbbrBtn.setOnAction(e -> abbreviationHandler.showManagerUI());
-        northPanel.getChildren().add(manageAbbrBtn); // Add it to the panel
-
+        manageAbbrBtn.setOnAction(e -> abbreviationManagerUI.display());
+        northPanel.getChildren().add(manageAbbrBtn);
                 
         HBox southPanel = new HBox(15);
         southPanel.setPadding(new Insets(10, 15, 10, 15));

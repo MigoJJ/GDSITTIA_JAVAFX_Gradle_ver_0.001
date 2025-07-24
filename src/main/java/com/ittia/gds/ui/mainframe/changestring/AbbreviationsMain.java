@@ -11,140 +11,56 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Arrays; // Import Arrays
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.geometry.Insets;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
+
+import com.ittia.gds.ui.model.Abbreviation;
 
 public class AbbreviationsMain implements ChangeListener<String> {
 
-    public void showManagerUI() {
-        Stage managerStage = new Stage();
-        managerStage.setTitle("Manage Abbreviations");
-        managerStage.setMinWidth(400);   // Added for consistent sizing
-        managerStage.setMinHeight(400);  // Added for consistent sizing
-        
-        VBox layout = new VBox(10);
-        layout.setPadding(new Insets(15));
-        
-        TextArea abbreviationsDisplay = new TextArea();
-        abbreviationsDisplay.setEditable(false);
-        abbreviationsDisplay.setPrefHeight(200);
-        
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : abbreviations.entrySet()) {
-            sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
-        }
-        abbreviationsDisplay.setText(sb.toString());
-        
-        GridPane form = new GridPane();
-        form.setHgap(10);
-        form.setVgap(10);
-        
-        TextField abbreviationField = new TextField();
-        TextField expansionField = new TextField();
-        Button addButton = new Button("Add/Update");
-        Button deleteButton = new Button("Delete");
-        Button findButton = new Button("Find");
-        Button quitButton = new Button("Quit");
-        // Add the new Clear button
-        Button clearInputAreasButton = new Button("Clear Input Areas"); 
-        
-        form.add(new Label("Abbreviation (e.g., :cc ):"), 0, 0);
-        form.add(abbreviationField, 1, 0);
-        form.add(new Label("Expansion:"), 0, 1);
-        form.add(expansionField, 1, 1);
-        form.add(addButton, 0, 2);
-        form.add(deleteButton, 1, 2);
-        form.add(findButton, 2, 2);
-        form.add(quitButton, 3, 2);
-        // Add the Clear button to the grid, possibly on a new row or extending the current one
-        form.add(clearInputAreasButton, 4, 2); // Placed next to Quit button
-        
-        addButton.setOnAction(e -> {
-            String inputKey = abbreviationField.getText().trim();
-            if (!inputKey.isEmpty() && !expansionField.getText().isEmpty()) {
-                String formattedKey = inputKey.startsWith(":") ? inputKey : ":" + inputKey;
-                formattedKey = formattedKey.endsWith(" ") ? formattedKey : formattedKey + " ";
-                addAbbreviation(formattedKey, expansionField.getText());
-                // After adding/updating, refresh the display and clear input fields
-                refreshAbbreviationDisplay(abbreviationsDisplay, sb);
-                abbreviationField.clear();
-                expansionField.clear();
-            }
-        });
-        
-        deleteButton.setOnAction(e -> {
-            String inputKey = abbreviationField.getText().trim();
-            if (!inputKey.isEmpty()) {
-                String formattedKey = inputKey.startsWith(":") ? inputKey : ":" + inputKey;
-                formattedKey = formattedKey.endsWith(" ") ? formattedKey : formattedKey + " ";
-                removeAbbreviation(formattedKey);
-                // After deleting, refresh the display and clear input fields
-                refreshAbbreviationDisplay(abbreviationsDisplay, sb);
-                abbreviationField.clear();
-                expansionField.clear();
-            }
-        });
-        
-        findButton.setOnAction(e -> {
-            String inputKey = abbreviationField.getText().trim();
-            if (!inputKey.isEmpty()) {
-                String formattedKey = inputKey.startsWith(":") ? inputKey : ":" + inputKey;
-                formattedKey = formattedKey.endsWith(" ") ? formattedKey : formattedKey + " ";
-                String expansion = abbreviations.get(formattedKey);
-                expansionField.setText(expansion != null ? expansion : "Not found");
-            }
-        });
-        
-        quitButton.setOnAction(e -> {
-            managerStage.close();
-        });
-
-        // Action for the new Clear button
-        clearInputAreasButton.setOnAction(e -> {
-              // Additionally clear the fields in the manager UI
-                abbreviationField.clear(); // <--- Added this line
-                expansionField.clear();    // <--- Added this line
-        });
-        
-        layout.getChildren().addAll(
-            new Label("Current Abbreviations:"),
-            abbreviationsDisplay,
-            new Label("Manage Abbreviations:"),
-            form
-        );
-        
-        Scene scene = new Scene(layout, 400, 400);
-        managerStage.setScene(scene);
-        managerStage.show();
-    }
-
     private final Map<String, String> abbreviations;
-
-    private final TextArea[] inputAreas;
-
-    private final TextArea outputArea;
+    private TextArea[] inputAreas; // REMOVED 'final'
+    private TextArea outputArea;   // REMOVED 'final'
+    private String[] textAreaTitles; // REMOVED 'final'
 
     private static final Pattern ABBREVIATION_PATTERN = Pattern.compile(":\\s*(\\w+)\\s+");
-
     private static final String DB_PATH = "jdbc:sqlite:" + System.getProperty("user.dir") + "/src/main/resources/db/abbreviations.db";
 
-    public AbbreviationsMain(TextArea[] inputAreas, TextArea outputArea) {
-        this.inputAreas = inputAreas;
-        this.outputArea = outputArea;
-        this.abbreviations = new HashMap<>();
+    /**
+     * Default constructor for AbbreviationsMain.
+     * Initializes core components for text expansion.
+     */
+    public AbbreviationsMain() {
+        this.abbreviations = new HashMap<>(); // This can remain final as it's assigned only here
         initializeDatabase();
         initializeAbbreviations();
-        attachListeners();
+        // Do NOT initialize inputAreas, outputArea, textAreaTitles here
+        // if they are to be assigned in a chained constructor.
+        // They will be null until the specific constructor assigns them.
+    }
+
+    /**
+     * Constructor for AbbreviationsMain used when text input areas are to be monitored
+     * for abbreviation expansion.
+     * @param inputAreas An array of TextArea elements to monitor for abbreviations.
+     * @param outputArea The TextArea where combined output from inputAreas is displayed.
+     * @param textAreaTitles The titles corresponding to the inputAreas for display in output.
+     */
+    public AbbreviationsMain(TextArea[] inputAreas, TextArea outputArea, String[] textAreaTitles) {
+        this(); // Call the default constructor to ensure 'abbreviations' map is initialized.
+
+        // Assign the provided input/output areas and titles HERE.
+        // These fields are no longer 'final' so they can be assigned after 'this()'.
+        this.inputAreas = inputAreas;
+        this.outputArea = outputArea;
+        this.textAreaTitles = textAreaTitles;
+        
+        if (this.inputAreas != null && this.inputAreas.length > 0) {
+            attachListeners();
+        }
     }
 
     private void initializeDatabase() {
@@ -169,6 +85,7 @@ public class AbbreviationsMain implements ChangeListener<String> {
     }
 
     private void initializeAbbreviations() {
+        abbreviations.clear();
         try (Connection conn = DriverManager.getConnection(DB_PATH);
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT key, value FROM abbreviations")) {
@@ -221,9 +138,11 @@ public class AbbreviationsMain implements ChangeListener<String> {
     }
 
     private void attachListeners() {
-        for (TextArea ta : inputAreas) {
-            if (ta != null) {
-                ta.textProperty().addListener(this);
+        if (inputAreas != null) {
+            for (TextArea ta : inputAreas) {
+                if (ta != null) {
+                    ta.textProperty().addListener(this);
+                }
             }
         }
     }
@@ -249,11 +168,8 @@ public class AbbreviationsMain implements ChangeListener<String> {
     @Override
     public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
         TextArea sourceTextArea = (TextArea) ((javafx.beans.property.StringProperty) observable).getBean();
-
         applyAbbreviation(sourceTextArea, newValue);
-        // When any input area changes, update the output area.
-        // This is important for the combined display to be accurate.
-        updateOutputArea(); 
+        updateOutputArea();
     }
 
     public void addAbbreviation(String key, String value) {
@@ -265,7 +181,7 @@ public class AbbreviationsMain implements ChangeListener<String> {
             pstmt.setString(1, formattedKey);
             pstmt.setString(2, value);
             pstmt.executeUpdate();
-            abbreviations.put(formattedKey, value);
+            this.abbreviations.put(formattedKey, value);
         } catch (SQLException e) {
             System.err.println("Failed to add abbreviation to database: " + e.getMessage());
         }
@@ -279,17 +195,27 @@ public class AbbreviationsMain implements ChangeListener<String> {
              PreparedStatement pstmt = conn.prepareStatement("DELETE FROM abbreviations WHERE key = ?")) {
             pstmt.setString(1, formattedKey);
             pstmt.executeUpdate();
-            abbreviations.remove(formattedKey);
+            this.abbreviations.remove(formattedKey);
         } catch (SQLException e) {
             System.err.println("Failed to remove abbreviation from database: " + e.getMessage());
         }
     }
 
-    public Map<String, String> getAbbreviations() {
-        return java.util.Collections.unmodifiableMap(abbreviations);
+    public Map<String, String> getAllAbbreviations() {
+        Map<String, String> allAbbrs = new HashMap<>();
+        try (Connection conn = DriverManager.getConnection(DB_PATH);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT key, value FROM abbreviations")) {
+            while (rs.next()) {
+                allAbbrs.put(rs.getString("key"), rs.getString("value"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Failed to retrieve all abbreviations from database: " + e.getMessage());
+        }
+        return allAbbrs;
     }
 
-    public void refreshAbbreviations() {
+    public void refreshAbbreviationsMap() {
         abbreviations.clear();
         try (Connection conn = DriverManager.getConnection(DB_PATH);
              Statement stmt = conn.createStatement();
@@ -302,48 +228,31 @@ public class AbbreviationsMain implements ChangeListener<String> {
         }
     }
 
-    /**
-     * Clears the text from all input TextAreas.
-     * It temporarily removes listeners to prevent abbreviation processing during clearing.
-     */
     private void clearAllInputAreas() {
-        for (TextArea ta : inputAreas) {
-            if (ta != null) {
-                // Temporarily remove listener to avoid triggering changes during clear
-                ta.textProperty().removeListener(this); 
-                ta.clear(); // Clear the text
-                ta.textProperty().addListener(this); // Re-add the listener
-            }
-        }
-        updateOutputArea(); // Clear the output area as well, or update it to reflect empty inputs
-    }
-
-    /**
-     * Helper method to refresh the abbreviations display TextArea.
-     */
-    private void refreshAbbreviationDisplay(TextArea displayArea, StringBuilder sb) {
-        sb.setLength(0); // Clear existing content
-        for (Map.Entry<String, String> entry : abbreviations.entrySet()) {
-            sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
-        }
-        displayArea.setText(sb.toString());
-    }
-
-    /**
-     * Updates the content of the outputArea by concatenating text from all inputAreas.
-     */
-    private void updateOutputArea() {
-        if (outputArea != null) {
-            StringBuilder combinedText = new StringBuilder();
+        if (inputAreas != null && inputAreas.length > 0) {
             for (TextArea ta : inputAreas) {
-                if (ta != null && ta.getText() != null) {
-                    combinedText.append(ta.getText()).append("\n"); // Append text and a newline
+                if (ta != null) {
+                    ta.textProperty().removeListener(this);
+                    ta.clear();
+                    ta.textProperty().addListener(this);
                 }
             }
-            // Temporarily remove listener from outputArea if it has one and this class monitors it.
-            // (Assuming GDSEMR_Abbreviations only listens to inputAreas, this might not be strictly necessary here,
-            // but is good practice if outputArea itself could trigger unintended cascades.)
-            outputArea.setText(combinedText.toString().trim()); // .trim() to remove trailing newline if only one input
+        }
+        updateOutputArea();
+    }
+
+    private void updateOutputArea() {
+        // Ensure all necessary components are initialized and arrays are of compatible length
+        if (outputArea != null && inputAreas != null && textAreaTitles != null && inputAreas.length == textAreaTitles.length) {
+            StringBuilder combinedText = new StringBuilder();
+            for (int i = 0; i < inputAreas.length; i++) {
+                TextArea ta = inputAreas[i];
+                if (ta != null && ta.getText() != null && !ta.getText().trim().isEmpty()) {
+                    combinedText.append(textAreaTitles[i]).append(" ") // Use the passed titles
+                                .append(ta.getText().trim()).append("\n\n");
+                }
+            }
+            outputArea.setText(combinedText.toString().trim());
         }
     }
 }
