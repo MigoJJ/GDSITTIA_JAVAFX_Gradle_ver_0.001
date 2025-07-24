@@ -12,12 +12,12 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
@@ -57,7 +57,6 @@ public class GDSEMR_frame extends Application {
                     cleared.set(true);
                 }
             });
-            // (Your other event handlers for text areas go here)
             textAreas[i] = ta;
         }
 
@@ -67,9 +66,10 @@ public class GDSEMR_frame extends Application {
         tempOutputArea.setPromptText("Output");
         tempOutputArea.setFont(Font.font("Consolas", 13));
         tempOutputArea.setWrapText(true);
+        tempOutputArea.setPrefRowCount(40); // Set preferred row count to 40
         tempOutputArea.setStyle("-fx-border-color: #d0d0d0; -fx-border-width: 1px; -fx-border-radius: 5px;");
 
-        // 3. SET UP THE LISTENER (This logic remains the same)
+        // 3. SET UP THE LISTENER
         for (TextArea ta : textAreas) {
             ta.textProperty().addListener((obs, oldVal, newVal) -> {
                 StringBuilder sb = new StringBuilder();
@@ -82,8 +82,6 @@ public class GDSEMR_frame extends Application {
                 tempOutputArea.setText(sb.toString().trim());
             });
         }
-
-        // --- LAYOUT RESTRUCTURING ---
 
         // 4. BUILD THE RIGHT PANE (Grid of 10 input areas)
         GridPane rightInputGrid = new GridPane();
@@ -102,15 +100,24 @@ public class GDSEMR_frame extends Application {
             GridPane.setConstraints(section, i % 2, i / 2);
             rightInputGrid.getChildren().add(section);
         }
+
+        // Column constraints (2 columns)
         ColumnConstraints col1 = new ColumnConstraints();
         col1.setHgrow(Priority.ALWAYS);
         ColumnConstraints col2 = new ColumnConstraints();
         col2.setHgrow(Priority.ALWAYS);
         rightInputGrid.getColumnConstraints().addAll(col1, col2);
 
+        // <--- Added row constraints for 5 rows to maximize height usage -->
+        for (int i = 0; i < 5; i++) {
+            RowConstraints rc = new RowConstraints();
+            rc.setVgrow(Priority.ALWAYS);
+            rc.setPercentHeight(20); // Each row takes 20% to fill 100% vertically
+            rightInputGrid.getRowConstraints().add(rc);
+        }
 
-        // 5. BUILD THE NEW LEFT PANE (Single output area)
-        VBox leftOutputPane = new VBox(); // No spacing needed as it only holds one item
+        // 5. BUILD THE LEFT PANE (Single output area)
+        VBox leftOutputPane = new VBox();
         leftOutputPane.setPadding(new Insets(15));
         LinearGradient gradient = new LinearGradient(
             0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
@@ -119,21 +126,19 @@ public class GDSEMR_frame extends Application {
         );
         leftOutputPane.setBackground(new javafx.scene.layout.Background(new javafx.scene.layout.BackgroundFill(gradient, new javafx.scene.layout.CornerRadii(10), Insets.EMPTY)));
         leftOutputPane.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 0);");
-        
+
         ScrollPane outSp = new ScrollPane(tempOutputArea);
         outSp.setFitToWidth(true);
         outSp.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
-        VBox.setVgrow(outSp, Priority.ALWAYS);
-        leftOutputPane.getChildren().add(outSp); // Add only the scroll pane
+        VBox.setVgrow(outSp, Priority.ALWAYS); // Ensure vertical growing
+        leftOutputPane.getChildren().add(outSp);
 
-        
-        // 6. ASSEMBLE THE SPLIT PANE IN THE NEW ORDER
+        // 6. ASSEMBLE THE SPLIT PANE
         SplitPane splitPane = new SplitPane();
-        splitPane.getItems().addAll(leftOutputPane, rightInputGrid); // <-- REVERSED ORDER
-        splitPane.setDividerPositions(0.32); // Adjusted from 0.68 to give left pane ~32% of width
+        splitPane.getItems().addAll(leftOutputPane, rightInputGrid);
+        splitPane.setDividerPositions(0.5); // Set 50:50 width ratio
 
-
-        // 7. BUILD BUTTONS AND ROOT PANE (This logic remains the same)
+        // 7. BUILD BUTTONS AND ROOT PANE
         HBox northPanel = new HBox(15);
         northPanel.setPadding(new Insets(10, 15, 10, 15));
         northPanel.setAlignment(Pos.CENTER_RIGHT);
