@@ -49,6 +49,7 @@ dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0") // Kotlin DSL: use parentheses and double quotes
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0") // Kotlin DSL: use parentheses and double quotes
+    implementation 'org.xerial:sqlite-jdbc:3.45.3.0'
 }
 
 // Configure the 'test' task to use JUnit Platform.

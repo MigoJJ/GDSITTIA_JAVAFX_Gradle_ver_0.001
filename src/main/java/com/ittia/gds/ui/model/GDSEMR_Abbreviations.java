@@ -1,14 +1,21 @@
-package com.ittia.gds.ui.mainframe.changestring;
-
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.scene.control.TextArea;
+package com.ittia.gds.ui.model;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 /**
  * GDSEMR_Abbreviations class provides functionality to manage and apply text abbreviations
  * within JavaFX TextArea components. It listens for text changes in specified input
@@ -17,7 +24,69 @@ import java.util.regex.Pattern;
  */
 public class GDSEMR_Abbreviations implements ChangeListener<String> {
 
-    // --- Fields ---
+	/**
+	 * Shows a UI dialog for managing abbreviations (adding, removing, editing)
+	 */
+	public void showManagerUI() {
+	    Stage managerStage = new Stage();
+	    managerStage.setTitle("Manage Abbreviations");
+	    
+	    VBox layout = new VBox(10);
+	    layout.setPadding(new Insets(15));
+	    
+	    TextArea abbreviationsDisplay = new TextArea();
+	    abbreviationsDisplay.setEditable(false);
+	    abbreviationsDisplay.setPrefHeight(200);
+	    
+	    // Display current abbreviations
+	    StringBuilder sb = new StringBuilder();
+	    for (Map.Entry<String, String> entry : abbreviations.entrySet()) {
+	        sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
+	    }
+	    abbreviationsDisplay.setText(sb.toString());
+	    
+	    // Form for adding new abbreviations
+	    GridPane form = new GridPane();
+	    form.setHgap(10);
+	    form.setVgap(10);
+	    
+	    TextField abbreviationField = new TextField();
+	    TextField expansionField = new TextField();
+	    Button addButton = new Button("Add/Update");
+	    
+	    form.add(new Label("Abbreviation:"), 0, 0);
+	    form.add(abbreviationField, 1, 0);
+	    form.add(new Label("Expansion:"), 0, 1);
+	    form.add(expansionField, 1, 1);
+	    form.add(addButton, 1, 2);
+	    
+	    addButton.setOnAction(e -> {
+	        if (!abbreviationField.getText().isEmpty() && !expansionField.getText().isEmpty()) {
+	            addAbbreviation(abbreviationField.getText(), expansionField.getText());
+	            // Refresh display
+	            sb.setLength(0);
+	            for (Map.Entry<String, String> entry : abbreviations.entrySet()) {
+	                sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
+	            }
+	            abbreviationsDisplay.setText(sb.toString());
+	            abbreviationField.clear();
+	            expansionField.clear();
+	        }
+	    });
+	    
+	    layout.getChildren().addAll(
+	        new Label("Current Abbreviations:"),
+	        abbreviationsDisplay,
+	        new Label("Add/Edit Abbreviations:"),
+	        form
+	    );
+	    
+	    Scene scene = new Scene(layout, 400, 400);
+	    managerStage.setScene(scene);
+	    managerStage.show();
+	}
+	// --- Fields ---
+	
 
     /**
      * A map to store abbreviations. Key: abbreviation trigger (e.g., "cc"), Value: full text (e.g., "Chief Complaint").
@@ -204,4 +273,9 @@ public class GDSEMR_Abbreviations implements ChangeListener<String> {
     public Map<String, String> getAbbreviations() {
         return java.util.Collections.unmodifiableMap(abbreviations);
     }
+
+	public void refreshAbbreviations() {
+		// TODO Auto-generated method stub
+		
+	}
 }
