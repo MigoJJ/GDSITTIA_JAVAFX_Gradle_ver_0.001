@@ -13,7 +13,6 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -44,6 +43,7 @@ public class GDSEMR_frame extends Application {
         textAreas = new TextArea[TEXT_AREA_TITLES.length];
         BooleanProperty cleared = new SimpleBooleanProperty(false);
 
+        // 1. CONFIGURE THE 10 INPUT TEXT AREAS (for the right side)
         for (int i = 0; i < TEXT_AREA_TITLES.length; i++) {
             TextArea ta = new TextArea();
             ta.setPromptText(TEXT_AREA_TITLES[i]);
@@ -51,31 +51,17 @@ public class GDSEMR_frame extends Application {
             ta.setWrapText(true);
             ta.setPrefRowCount(3);
             ta.setStyle("-fx-border-color: #e0e0e0; -fx-border-width: 1px; -fx-border-radius: 5px;");
-
             ta.focusedProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal && !cleared.get()) {
-                    for (TextArea t : textAreas) {
-                        if (t != null) t.clear();
-                    }
+                    for (TextArea t : textAreas) { if (t != null) t.clear(); }
                     cleared.set(true);
                 }
             });
-
-            // Abbreviation handling example (customize as needed)
-            ta.setOnKeyReleased(evt -> {
-                if (evt.getCode() == KeyCode.SPACE) {
-                    // Your abbreviation handling logic here
-                }
-            });
-
-            // Function key and double-click handlers (placeholders)
-            ta.setOnKeyPressed(evt -> { /* ... */ });
-            ta.setOnMouseClicked(evt -> { /* ... */ });
-
-            textAreas[i] = ta; // Append to the array for later access
+            // (Your other event handlers for text areas go here)
+            textAreas[i] = ta;
         }
 
-        // Output area on the right, styled
+        // 2. CONFIGURE THE SINGLE OUTPUT AREA (for the left side)
         tempOutputArea = new TextArea();
         tempOutputArea.setEditable(true);
         tempOutputArea.setPromptText("Output");
@@ -83,14 +69,9 @@ public class GDSEMR_frame extends Application {
         tempOutputArea.setWrapText(true);
         tempOutputArea.setStyle("-fx-border-color: #d0d0d0; -fx-border-width: 1px; -fx-border-radius: 5px;");
 
-        gradientInputField = new TextField();
-        gradientInputField.setPromptText("Input command here...");
-        gradientInputField.setFont(Font.font("Consolas", 13));
-        gradientInputField.setStyle("-fx-border-color: #d0d0d0; -fx-border-width: 1px; -fx-border-radius: 5px; -fx-background-color: #f8f8f8;");
-
-        // Listening: Option 1 - Mirror all textareas' content into output on change
-        for (int i = 0; i < TEXT_AREA_TITLES.length; i++) {
-            textAreas[i].textProperty().addListener((obs, oldVal, newVal) -> {
+        // 3. SET UP THE LISTENER (This logic remains the same)
+        for (TextArea ta : textAreas) {
+            ta.textProperty().addListener((obs, oldVal, newVal) -> {
                 StringBuilder sb = new StringBuilder();
                 for (int j = 0; j < TEXT_AREA_TITLES.length; j++) {
                     String content = textAreas[j].getText();
@@ -102,12 +83,14 @@ public class GDSEMR_frame extends Application {
             });
         }
 
-        // Left Grid: label+area groups
-        GridPane leftGrid = new GridPane();
-        leftGrid.setHgap(15);
-        leftGrid.setVgap(10);
-        leftGrid.setPadding(new Insets(15));
-        leftGrid.setStyle("-fx-background-color: #f5f5f5; -fx-border-radius: 10px; -fx-background-radius: 10px; " +
+        // --- LAYOUT RESTRUCTURING ---
+
+        // 4. BUILD THE RIGHT PANE (Grid of 10 input areas)
+        GridPane rightInputGrid = new GridPane();
+        rightInputGrid.setHgap(15);
+        rightInputGrid.setVgap(10);
+        rightInputGrid.setPadding(new Insets(15));
+        rightInputGrid.setStyle("-fx-background-color: #f5f5f5; -fx-border-radius: 10px; -fx-background-radius: 10px; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 0);");
 
         for (int i = 0; i < TEXT_AREA_TITLES.length; i++) {
@@ -117,41 +100,40 @@ public class GDSEMR_frame extends Application {
             VBox section = new VBox(3, lbl, textAreas[i]);
             VBox.setVgrow(textAreas[i], Priority.ALWAYS);
             GridPane.setConstraints(section, i % 2, i / 2);
-            leftGrid.getChildren().add(section);
+            rightInputGrid.getChildren().add(section);
         }
         ColumnConstraints col1 = new ColumnConstraints();
         col1.setHgrow(Priority.ALWAYS);
         ColumnConstraints col2 = new ColumnConstraints();
         col2.setHgrow(Priority.ALWAYS);
-        leftGrid.getColumnConstraints().addAll(col1, col2);
+        rightInputGrid.getColumnConstraints().addAll(col1, col2);
 
-        // Right: output+input w/ gradient
-        VBox rightBox = new VBox(15);
-        rightBox.setPadding(new Insets(15));
-        rightBox.setPrefWidth(450);
+
+        // 5. BUILD THE NEW LEFT PANE (Single output area)
+        VBox leftOutputPane = new VBox(); // No spacing needed as it only holds one item
+        leftOutputPane.setPadding(new Insets(15));
         LinearGradient gradient = new LinearGradient(
             0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
             new Stop(0, Color.rgb(230, 245, 230)),
             new Stop(1, Color.rgb(200, 230, 200))
         );
-        rightBox.setBackground(
-            new javafx.scene.layout.Background(
-                new javafx.scene.layout.BackgroundFill(gradient, new javafx.scene.layout.CornerRadii(10), Insets.EMPTY)
-            )
-        );
-        rightBox.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 0);");
+        leftOutputPane.setBackground(new javafx.scene.layout.Background(new javafx.scene.layout.BackgroundFill(gradient, new javafx.scene.layout.CornerRadii(10), Insets.EMPTY)));
+        leftOutputPane.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 0);");
+        
         ScrollPane outSp = new ScrollPane(tempOutputArea);
         outSp.setFitToWidth(true);
         outSp.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         VBox.setVgrow(outSp, Priority.ALWAYS);
-        rightBox.getChildren().addAll(outSp, gradientInputField);
+        leftOutputPane.getChildren().add(outSp); // Add only the scroll pane
 
-        // Split pane layout
+        
+        // 6. ASSEMBLE THE SPLIT PANE IN THE NEW ORDER
         SplitPane splitPane = new SplitPane();
-        splitPane.getItems().addAll(leftGrid, rightBox);
-        splitPane.setDividerPositions(0.68);
+        splitPane.getItems().addAll(leftOutputPane, rightInputGrid); // <-- REVERSED ORDER
+        splitPane.setDividerPositions(0.32); // Adjusted from 0.68 to give left pane ~32% of width
 
-        // Button panels
+
+        // 7. BUILD BUTTONS AND ROOT PANE (This logic remains the same)
         HBox northPanel = new HBox(15);
         northPanel.setPadding(new Insets(10, 15, 10, 15));
         northPanel.setAlignment(Pos.CENTER_RIGHT);
@@ -166,33 +148,25 @@ public class GDSEMR_frame extends Application {
         for (String name : btns) {
             Button b1 = new Button(name);
             b1.setPrefWidth(80);
-            b1.setStyle("-fx-background-color: #5cb85c; -fx-text-fill: white; -fx-font-weight: bold; " +
-                       "-fx-border-radius: 5px; -fx-background-radius: 5px;");
-            b1.setOnMouseEntered(e -> b1.setStyle("-fx-background-color: #4cae4c; -fx-text-fill: white; -fx-font-weight: bold; " +
-                       "-fx-border-radius: 5px; -fx-background-radius: 5px;"));
-            b1.setOnMouseExited(e -> b1.setStyle("-fx-background-color: #5cb85c; -fx-text-fill: white; -fx-font-weight: bold; " +
-                       "-fx-border-radius: 5px; -fx-background-radius: 5px;"));
-            // placeholder: attach your handler here, e.g., MainFrame_Button_north_south.EMR_B_1entryentry(name, "north"));
+            b1.setStyle("-fx-background-color: #5cb85c; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;");
+            b1.setOnMouseEntered(e -> b1.setStyle("-fx-background-color: #4cae4c; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;"));
+            b1.setOnMouseExited(e -> b1.setStyle("-fx-background-color: #5cb85c; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;"));
             northPanel.getChildren().add(b1);
 
             Button b2 = new Button(name);
             b2.setPrefWidth(80);
-            b2.setStyle("-fx-background-color: #0275d8; -fx-text-fill: white; -fx-font-weight: bold; " +
-                       "-fx-border-radius: 5px; -fx-background-radius: 5px;");
-            b2.setOnMouseEntered(e -> b2.setStyle("-fx-background-color: #025aa5; -fx-text-fill: white; -fx-font-weight: bold; " +
-                       "-fx-border-radius: 5px; -fx-background-radius: 5px;"));
-            b2.setOnMouseExited(e -> b2.setStyle("-fx-background-color: #0275d8; -fx-text-fill: white; -fx-font-weight: bold; " +
-                       "-fx-border-radius: 5px; -fx-background-radius: 5px;"));
-            // placeholder: attach your handler here, e.g., MainFrame_Button_north_south.EMR_B_1entryentry(name, "south"));
+            b2.setStyle("-fx-background-color: #0275d8; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;");
+            b2.setOnMouseEntered(e -> b2.setStyle("-fx-background-color: #025aa5; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;"));
+            b2.setOnMouseExited(e -> b2.setStyle("-fx-background-color: #0275d8; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;"));
             southPanel.getChildren().add(b2);
         }
 
-        // Root pane
         BorderPane root = new BorderPane();
         root.setCenter(splitPane);
         root.setTop(northPanel);
         root.setBottom(southPanel);
         root.setStyle("-fx-background-color: #ffffff;");
+        root.setPrefSize(FRAME_WIDTH, FRAME_HEIGHT);
 
         Scene scene = new Scene(root, FRAME_WIDTH, FRAME_HEIGHT);
         primaryStage.setTitle("GDS EMR Interface for Physician - Enhanced");
