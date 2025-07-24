@@ -1,6 +1,7 @@
 package com.ittia.gds;
 
-import com.ittia.gds.ui.mainframe.changestring.GDSEMR_Abbreviations; // Import the Abbreviations class
+import com.ittia.gds.ui.model.GDSEMR_Abbreviations;
+
 import javafx.application.Application;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -158,6 +159,13 @@ public class GDSEMR_frame extends Application {
         northPanel.setAlignment(Pos.CENTER_RIGHT);
         northPanel.setStyle("-fx-background-color: #e8e8e8;");
 
+     // Add the new Manage Abbreviations button
+        Button manageAbbrBtn = new Button("Manage Abbreviations");
+        manageAbbrBtn.setStyle("-fx-background-color: #f0ad4e; -fx-text-fill: white; -fx-font-weight: bold;");
+        manageAbbrBtn.setOnAction(e -> abbreviationHandler.showManagerUI());
+        northPanel.getChildren().add(manageAbbrBtn); // Add it to the panel
+
+                
         HBox southPanel = new HBox(15);
         southPanel.setPadding(new Insets(10, 15, 10, 15));
         southPanel.setAlignment(Pos.CENTER_LEFT);
