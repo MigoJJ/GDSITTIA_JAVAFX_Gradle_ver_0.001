@@ -1,6 +1,6 @@
 package com.ittia.gds;
 
-import com.ittia.gds.ui.model.GDSEMR_Abbreviations;
+import com.ittia.gds.ui.mainframe.changestring.AbbreviationsMain;
 
 import javafx.application.Application;
 import javafx.beans.property.BooleanProperty;
@@ -80,7 +80,7 @@ public class GDSEMR_frame extends Application {
         // Instantiate GDSEMR_Abbreviations *AFTER* textAreas and tempOutputArea are fully initialized.
         // This ensures that when GDSEMR_Abbreviations tries to attach listeners,
         // all elements in textAreas are actual TextArea objects, not null.
-        GDSEMR_Abbreviations abbreviationHandler = new GDSEMR_Abbreviations(textAreas, tempOutputArea);
+        AbbreviationsMain abbreviationHandler = new AbbreviationsMain(textAreas, tempOutputArea);
         // --- FIX END ---
 
         // 3. SET UP THE LISTENER for combining text into the output area

@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import com.ittia.gds.db.DatabaseManager;
 import com.ittia.gds.ui.model.Abbreviation;
-import com.ittia.gds.ui.model.GDSEMR_Abbreviations;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -32,11 +31,11 @@ import javafx.stage.Stage;
 public class AbbreviationManagerUI {
 
     private final DatabaseManager dbManager;
-    private final GDSEMR_Abbreviations abbreviationHandler;
+    private final AbbreviationsMain abbreviationHandler;
     private final TableView<Abbreviation> tableView = new TableView<>();
     private final ObservableList<Abbreviation> abbreviationList = FXCollections.observableArrayList();
 
-    public AbbreviationManagerUI(GDSEMR_Abbreviations handler, DatabaseManager dbManager) {
+    public AbbreviationManagerUI(AbbreviationsMain handler, DatabaseManager dbManager) {
         this.abbreviationHandler = handler;
         this.dbManager = dbManager;
     }

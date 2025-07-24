@@ -7,8 +7,8 @@ import java.util.Map;
 
 public class DatabaseManager {
     // Path relative to the resources folder
-    private static final String DB_PATH = "src/main/resources/db/abbreviations.db";
-    private static final String DB_URL = "jdbc:sqlite:" + DB_PATH;
+	private static final String DB_PATH = System.getProperty("user.dir") + "/src/main/resources/db/abbreviations.db";
+	private static final String DB_URL = "jdbc:sqlite:" + DB_PATH;
 
     public DatabaseManager() {
         ensureDbDirectoryExists();  // Create directory if it doesn't exist
