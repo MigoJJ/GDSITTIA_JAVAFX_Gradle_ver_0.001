@@ -36,7 +36,7 @@ public class AbbreviationManagerUI {
     private final TableView<Abbreviation> tableView = new TableView<>();
     private final ObservableList<Abbreviation> abbreviationList = FXCollections.observableArrayList();
 
-    public AbbreviationManagerUI2(GDSEMR_Abbreviations handler, DatabaseManager dbManager) {
+    public AbbreviationManagerUI(GDSEMR_Abbreviations handler, DatabaseManager dbManager) {
         this.abbreviationHandler = handler;
         this.dbManager = dbManager;
     }
