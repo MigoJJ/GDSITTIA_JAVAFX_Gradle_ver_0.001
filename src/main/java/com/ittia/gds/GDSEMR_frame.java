@@ -1,5 +1,6 @@
 package com.ittia.gds;
 
+import com.ittia.gds.ui.mainframe.changestring.GDSEMR_Abbreviations; // Import the Abbreviations class
 import javafx.application.Application;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -36,14 +37,16 @@ public class GDSEMR_frame extends Application {
     };
     public static TextArea[] textAreas;
     public static TextArea tempOutputArea;
-    public static TextField gradientInputField;
+    public static TextField gradientInputField; // This field is declared but not used in the current code
 
     @Override
     public void start(Stage primaryStage) {
+        // Initialize the textAreas array first
         textAreas = new TextArea[TEXT_AREA_TITLES.length];
         BooleanProperty cleared = new SimpleBooleanProperty(false);
 
         // 1. CONFIGURE THE 10 INPUT TEXT AREAS (for the right side)
+        // This loop populates the textAreas array with actual TextArea objects
         for (int i = 0; i < TEXT_AREA_TITLES.length; i++) {
             TextArea ta = new TextArea();
             ta.setPromptText(TEXT_AREA_TITLES[i]);
@@ -53,11 +56,14 @@ public class GDSEMR_frame extends Application {
             ta.setStyle("-fx-border-color: #e0e0e0; -fx-border-width: 1px; -fx-border-radius: 5px;");
             ta.focusedProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal && !cleared.get()) {
-                    for (TextArea t : textAreas) { if (t != null) t.clear(); }
+                    // Only clear if not already cleared for the current session
+                    for (TextArea t : textAreas) {
+                        if (t != null) t.clear();
+                    }
                     cleared.set(true);
                 }
             });
-            textAreas[i] = ta;
+            textAreas[i] = ta; // Assign the created TextArea to the array
         }
 
         // 2. CONFIGURE THE SINGLE OUTPUT AREA (for the left side)
@@ -69,7 +75,15 @@ public class GDSEMR_frame extends Application {
         tempOutputArea.setPrefRowCount(40); // Set preferred row count to 40
         tempOutputArea.setStyle("-fx-border-color: #d0d0d0; -fx-border-width: 1px; -fx-border-radius: 5px;");
 
-        // 3. SET UP THE LISTENER
+        // --- FIX START ---
+        // Instantiate GDSEMR_Abbreviations *AFTER* textAreas and tempOutputArea are fully initialized.
+        // This ensures that when GDSEMR_Abbreviations tries to attach listeners,
+        // all elements in textAreas are actual TextArea objects, not null.
+        GDSEMR_Abbreviations abbreviationHandler = new GDSEMR_Abbreviations(textAreas, tempOutputArea);
+        // --- FIX END ---
+
+        // 3. SET UP THE LISTENER for combining text into the output area
+        // This listener should remain as it handles the overall compilation of text.
         for (TextArea ta : textAreas) {
             ta.textProperty().addListener((obs, oldVal, newVal) -> {
                 StringBuilder sb = new StringBuilder();
@@ -120,9 +134,9 @@ public class GDSEMR_frame extends Application {
         VBox leftOutputPane = new VBox();
         leftOutputPane.setPadding(new Insets(15));
         LinearGradient gradient = new LinearGradient(
-            0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-            new Stop(0, Color.rgb(230, 245, 230)),
-            new Stop(1, Color.rgb(200, 230, 200))
+                0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+                new Stop(0, Color.rgb(230, 245, 230)),
+                new Stop(1, Color.rgb(200, 230, 200))
         );
         leftOutputPane.setBackground(new javafx.scene.layout.Background(new javafx.scene.layout.BackgroundFill(gradient, new javafx.scene.layout.CornerRadii(10), Insets.EMPTY)));
         leftOutputPane.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 0);");
