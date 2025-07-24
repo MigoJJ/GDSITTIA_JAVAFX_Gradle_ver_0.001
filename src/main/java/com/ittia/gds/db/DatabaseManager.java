@@ -1,16 +1,26 @@
 package com.ittia.gds.db;
 
+import java.io.File;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 
 public class DatabaseManager {
-    private static final String DB_URL = "jdbc:sqlite:abbreviations.db";
+    // Path relative to the resources folder
+    private static final String DB_PATH = "src/main/resources/db/abbreviations.db";
+    private static final String DB_URL = "jdbc:sqlite:" + DB_PATH;
 
     public DatabaseManager() {
+        ensureDbDirectoryExists();  // Create directory if it doesn't exist
         createTableIfNotExists();
     }
 
+    private void ensureDbDirectoryExists() {
+        File dbDir = new File("src/main/resources/db");
+        if (!dbDir.exists()) {
+            dbDir.mkdirs();  // Create all necessary parent directories
+        }
+    }
     private Connection connect() throws SQLException {
         return DriverManager.getConnection(DB_URL);
     }

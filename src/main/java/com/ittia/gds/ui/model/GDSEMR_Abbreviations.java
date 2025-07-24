@@ -1,5 +1,12 @@
 package com.ittia.gds.ui.model;
 
+import java.io.File;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -16,6 +23,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
 /**
  * GDSEMR_Abbreviations class provides functionality to manage and apply text abbreviations
  * within JavaFX TextArea components. It listens for text changes in specified input
@@ -24,72 +32,119 @@ import javafx.stage.Stage;
  */
 public class GDSEMR_Abbreviations implements ChangeListener<String> {
 
-	/**
-	 * Shows a UI dialog for managing abbreviations (adding, removing, editing)
-	 */
-	public void showManagerUI() {
-	    Stage managerStage = new Stage();
-	    managerStage.setTitle("Manage Abbreviations");
-	    
-	    VBox layout = new VBox(10);
-	    layout.setPadding(new Insets(15));
-	    
-	    TextArea abbreviationsDisplay = new TextArea();
-	    abbreviationsDisplay.setEditable(false);
-	    abbreviationsDisplay.setPrefHeight(200);
-	    
-	    // Display current abbreviations
-	    StringBuilder sb = new StringBuilder();
-	    for (Map.Entry<String, String> entry : abbreviations.entrySet()) {
-	        sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
-	    }
-	    abbreviationsDisplay.setText(sb.toString());
-	    
-	    // Form for adding new abbreviations
-	    GridPane form = new GridPane();
-	    form.setHgap(10);
-	    form.setVgap(10);
-	    
-	    TextField abbreviationField = new TextField();
-	    TextField expansionField = new TextField();
-	    Button addButton = new Button("Add/Update");
-	    
-	    form.add(new Label("Abbreviation:"), 0, 0);
-	    form.add(abbreviationField, 1, 0);
-	    form.add(new Label("Expansion:"), 0, 1);
-	    form.add(expansionField, 1, 1);
-	    form.add(addButton, 1, 2);
-	    
-	    addButton.setOnAction(e -> {
-	        if (!abbreviationField.getText().isEmpty() && !expansionField.getText().isEmpty()) {
-	            addAbbreviation(abbreviationField.getText(), expansionField.getText());
-	            // Refresh display
-	            sb.setLength(0);
-	            for (Map.Entry<String, String> entry : abbreviations.entrySet()) {
-	                sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
-	            }
-	            abbreviationsDisplay.setText(sb.toString());
-	            abbreviationField.clear();
-	            expansionField.clear();
-	        }
-	    });
-	    
-	    layout.getChildren().addAll(
-	        new Label("Current Abbreviations:"),
-	        abbreviationsDisplay,
-	        new Label("Add/Edit Abbreviations:"),
-	        form
-	    );
-	    
-	    Scene scene = new Scene(layout, 400, 400);
-	    managerStage.setScene(scene);
-	    managerStage.show();
-	}
-	// --- Fields ---
-	
+    /**
+     * Shows a UI dialog for managing abbreviations (adding, removing, editing, finding, and quitting)
+     */
+    public void showManagerUI() {
+        Stage managerStage = new Stage();
+        managerStage.setTitle("Manage Abbreviations");
+        
+        VBox layout = new VBox(10);
+        layout.setPadding(new Insets(15));
+        
+        TextArea abbreviationsDisplay = new TextArea();
+        abbreviationsDisplay.setEditable(false);
+        abbreviationsDisplay.setPrefHeight(200);
+        
+        // Display current abbreviations
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : abbreviations.entrySet()) {
+            sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
+        }
+        abbreviationsDisplay.setText(sb.toString());
+        
+        // Form for managing abbreviations
+        GridPane form = new GridPane();
+        form.setHgap(10);
+        form.setVgap(10);
+        
+        TextField abbreviationField = new TextField();
+        TextField expansionField = new TextField();
+        Button addButton = new Button("Add/Update");
+        Button deleteButton = new Button("Delete");
+        Button findButton = new Button("Find");
+        Button quitButton = new Button("Quit");
+        
+        form.add(new Label("Abbreviation (e.g., :cc ):"), 0, 0);
+        form.add(abbreviationField, 1, 0);
+        form.add(new Label("Expansion:"), 0, 1);
+        form.add(expansionField, 1, 1);
+        form.add(addButton, 0, 2);
+        form.add(deleteButton, 1, 2);
+        form.add(findButton, 2, 2);
+        form.add(quitButton, 3, 2);
+        
+        // Add/Update button action
+        addButton.setOnAction(e -> {
+            String inputKey = abbreviationField.getText().trim();
+            if (!inputKey.isEmpty() && !expansionField.getText().isEmpty()) {
+                // Ensure the key starts with ":" and ends with " "
+                String formattedKey = inputKey.startsWith(":") ? inputKey : ":" + inputKey;
+                formattedKey = formattedKey.endsWith(" ") ? formattedKey : formattedKey + " ";
+                addAbbreviation(formattedKey, expansionField.getText());
+                // Refresh display
+                sb.setLength(0);
+                for (Map.Entry<String, String> entry : abbreviations.entrySet()) {
+                    sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
+                }
+                abbreviationsDisplay.setText(sb.toString());
+                abbreviationField.clear();
+                expansionField.clear();
+            }
+        });
+        
+        // Delete button action
+        deleteButton.setOnAction(e -> {
+            String inputKey = abbreviationField.getText().trim();
+            if (!inputKey.isEmpty()) {
+                // Ensure the key starts with ":" and ends with " "
+                String formattedKey = inputKey.startsWith(":") ? inputKey : ":" + inputKey;
+                formattedKey = formattedKey.endsWith(" ") ? formattedKey : formattedKey + " ";
+                removeAbbreviation(formattedKey);
+                // Refresh display
+                sb.setLength(0);
+                for (Map.Entry<String, String> entry : abbreviations.entrySet()) {
+                    sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append("\n");
+                }
+                abbreviationsDisplay.setText(sb.toString());
+                abbreviationField.clear();
+                expansionField.clear();
+            }
+        });
+        
+        // Find button action
+        findButton.setOnAction(e -> {
+            String inputKey = abbreviationField.getText().trim();
+            if (!inputKey.isEmpty()) {
+                // Ensure the key starts with ":" and ends with " "
+                String formattedKey = inputKey.startsWith(":") ? inputKey : ":" + inputKey;
+                formattedKey = formattedKey.endsWith(" ") ? formattedKey : formattedKey + " ";
+                String expansion = abbreviations.get(formattedKey);
+                expansionField.setText(expansion != null ? expansion : "Not found");
+            }
+        });
+        
+        // Quit button action
+        quitButton.setOnAction(e -> {
+            managerStage.close();
+        });
+        
+        layout.getChildren().addAll(
+            new Label("Current Abbreviations:"),
+            abbreviationsDisplay,
+            new Label("Manage Abbreviations:"),
+            form
+        );
+        
+        Scene scene = new Scene(layout, 400, 400);
+        managerStage.setScene(scene);
+        managerStage.show();
+    }
+
+    // --- Fields ---
 
     /**
-     * A map to store abbreviations. Key: abbreviation trigger (e.g., "cc"), Value: full text (e.g., "Chief Complaint").
+     * A map to store abbreviations. Key: abbreviation trigger (e.g., ":cc "), Value: full text (e.g., "Chief Complaint").
      */
     private final Map<String, String> abbreviations;
 
@@ -107,13 +162,16 @@ public class GDSEMR_Abbreviations implements ChangeListener<String> {
     /**
      * A regular expression pattern to detect the abbreviation trigger.
      * Example: ":word " where 'word' is the abbreviation key.
-     * The pattern should capture the word after the colon.
-     * The pattern `:\\s*(\\w+)\\s*$` matches a colon, followed by optional whitespace,
-     * then one or more word characters (captured in group 1), followed by optional whitespace,
-     * and finally the end of the string. This ensures the abbreviation is detected
-     * when typed at the end of the current text and followed by a space.
+     * The pattern `:\\s*(\\w+)\\s+` matches a colon, followed by optional whitespace,
+     * then one or more word characters (captured in group 1), followed by one or more whitespace characters.
+     * This ensures the abbreviation is detected when typed with a space at the end.
      */
-    private static final Pattern ABBREVIATION_PATTERN = Pattern.compile(":\\s*(\\w+)\\s*$");
+    private static final Pattern ABBREVIATION_PATTERN = Pattern.compile(":\\s*(\\w+)\\s+");
+
+    /**
+     * Path to the SQLite database, using user.dir for the project root.
+     */
+    private static final String DB_PATH = "jdbc:sqlite:" + System.getProperty("user.dir") + "/src/main/resources/db/abbreviations.db";
 
     // --- Constructor ---
 
@@ -127,43 +185,98 @@ public class GDSEMR_Abbreviations implements ChangeListener<String> {
         this.inputAreas = inputAreas;
         this.outputArea = outputArea;
         this.abbreviations = new HashMap<>();
-        initializeAbbreviations(); // Populate the initial set of abbreviations
-        attachListeners();         // Attach this ChangeListener to all input TextAreas
+        initializeDatabase(); // Initialize the database and table
+        initializeAbbreviations(); // Populate the initial set of abbreviations from the database
+        attachListeners(); // Attach this ChangeListener to all input TextAreas
     }
 
     // --- Private Helper Methods ---
 
     /**
-     * Initializes the map with predefined abbreviations.
-     * This method can be extended to load abbreviations from a file, database, etc.
+     * Initializes the SQLite database and creates the abbreviations table if it doesn't exist.
+     */
+    private void initializeDatabase() {
+        // Ensure the db directory exists
+        File dbDir = new File(System.getProperty("user.dir") + "/src/main/resources/db");
+        if (!dbDir.exists()) {
+            boolean created = dbDir.mkdirs();
+            if (!created) {
+                System.err.println("Failed to create directory: " + dbDir.getAbsolutePath());
+                return;
+            }
+        }
+
+        // Initialize the database and create the table
+        try (Connection conn = DriverManager.getConnection(DB_PATH);
+             Statement stmt = conn.createStatement()) {
+            // Create table if it doesn't exist
+            String sql = "CREATE TABLE IF NOT EXISTS abbreviations ("
+                       + "key TEXT PRIMARY KEY, "
+                       + "value TEXT NOT NULL)";
+            stmt.execute(sql);
+        } catch (SQLException e) {
+            System.err.println("Failed to initialize database: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Initializes the map by loading abbreviations from the SQLite database.
+     * If the database is empty, it populates it with default abbreviations.
      */
     private void initializeAbbreviations() {
-        // Example abbreviations. Add more as needed.
-        abbreviations.put("cc", "Chief Complaint");
-        abbreviations.put("pi", "Present Illness");
-        abbreviations.put("ros", "Review of Systems");
-        abbreviations.put("pmh", "Past Medical History");
-        abbreviations.put("s", "Subjective");
-        abbreviations.put("o", "Objective");
-        abbreviations.put("pe", "Physical Exam");
-        abbreviations.put("a", "Assessment");
-        abbreviations.put("p", "Plan");
-        abbreviations.put("cmt", "Comment");
-        // Add more abbreviations here for common medical terms or phrases
-        abbreviations.put("dx", "Diagnosis");
-        abbreviations.put("tx", "Treatment");
-        abbreviations.put("rx", "Prescription");
-        abbreviations.put("hpi", "History of Present Illness");
-        abbreviations.put("fhx", "Family History");
-        abbreviations.put("shx", "Social History");
-        abbreviations.put("allergies", "Allergies");
-        abbreviations.put("meds", "Medications");
-        abbreviations.put("vs", "Vital Signs");
-        abbreviations.put("cva", "Cerebrovascular Accident");
-        abbreviations.put("mi", "Myocardial Infarction");
-        abbreviations.put("dm", "Diabetes Mellitus");
-        abbreviations.put("htn", "Hypertension");
-        abbreviations.put("cad", "Coronary Artery Disease");
+        // Load existing abbreviations from the database
+        try (Connection conn = DriverManager.getConnection(DB_PATH);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT key, value FROM abbreviations")) {
+            while (rs.next()) {
+                abbreviations.put(rs.getString("key"), rs.getString("value"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Failed to load abbreviations from database: " + e.getMessage());
+        }
+
+        // If the database is empty, populate it with default abbreviations
+        if (abbreviations.isEmpty()) {
+            // Default abbreviations
+            Map<String, String> defaultAbbreviations = new HashMap<>();
+            defaultAbbreviations.put(":cc ", "Chief Complaint");
+            defaultAbbreviations.put(":pi ", "Present Illness");
+            defaultAbbreviations.put(":ros ", "Review of Systems");
+            defaultAbbreviations.put(":pmh ", "Past Medical History");
+            defaultAbbreviations.put(":s ", "Subjective");
+            defaultAbbreviations.put(":o ", "Objective");
+            defaultAbbreviations.put(":pe ", "Physical Exam");
+            defaultAbbreviations.put(":a ", "Assessment");
+            defaultAbbreviations.put(":p ", "Plan");
+            defaultAbbreviations.put(":cmt ", "Comment");
+            defaultAbbreviations.put(":dx ", "Diagnosis");
+            defaultAbbreviations.put(":tx ", "Treatment");
+            defaultAbbreviations.put(":rx ", "Prescription");
+            defaultAbbreviations.put(":hpi ", "History of Present Illness");
+            defaultAbbreviations.put(":fhx ", "Family History");
+            defaultAbbreviations.put(":shx ", "Social History");
+            defaultAbbreviations.put(":allergies ", "Allergies");
+            defaultAbbreviations.put(":meds ", "Medications");
+            defaultAbbreviations.put(":vs ", "Vital Signs");
+            defaultAbbreviations.put(":cva ", "Cerebrovascular Accident");
+            defaultAbbreviations.put(":mi ", "Myocardial Infarction");
+            defaultAbbreviations.put(":dm ", "Diabetes Mellitus");
+            defaultAbbreviations.put(":htn ", "Hypertension");
+            defaultAbbreviations.put(":cad ", "Coronary Artery Disease");
+
+            // Insert default abbreviations into the database
+            try (Connection conn = DriverManager.getConnection(DB_PATH);
+                 PreparedStatement pstmt = conn.prepareStatement("INSERT OR REPLACE INTO abbreviations (key, value) VALUES (?, ?)")) {
+                for (Map.Entry<String, String> entry : defaultAbbreviations.entrySet()) {
+                    pstmt.setString(1, entry.getKey());
+                    pstmt.setString(2, entry.getValue());
+                    pstmt.executeUpdate();
+                    abbreviations.put(entry.getKey(), entry.getValue());
+                }
+            } catch (SQLException e) {
+                System.err.println("Failed to insert default abbreviations: " + e.getMessage());
+            }
+        }
     }
 
     /**
@@ -192,9 +305,9 @@ public class GDSEMR_Abbreviations implements ChangeListener<String> {
         // Check if the new text ends with the abbreviation pattern ":word "
         Matcher matcher = ABBREVIATION_PATTERN.matcher(newText);
 
-        // If the pattern is found at the end of the text
+        // If the pattern is found
         if (matcher.find()) {
-            String abbreviationKey = matcher.group(1).toLowerCase(); // Extract the 'word' part and convert to lowercase
+            String abbreviationKey = ":" + matcher.group(1).toLowerCase() + " "; // Reconstruct the full key (e.g., ":cc ")
             String fullText = abbreviations.get(abbreviationKey); // Look up the full text in the abbreviations map
 
             // If a corresponding full text is found for the abbreviation key
@@ -233,49 +346,75 @@ public class GDSEMR_Abbreviations implements ChangeListener<String> {
         TextArea sourceTextArea = (TextArea) ((javafx.beans.property.StringProperty) observable).getBean();
 
         // Apply abbreviation logic to the current TextArea.
-        // It's important that this method does not trigger another change event
-        // directly, which is handled by temporarily removing and re-adding the listener.
         applyAbbreviation(sourceTextArea, newValue);
-
-        // Note: The main output area (`tempOutputArea` in `GDSEMR_frame`) is expected
-        // to have its own listener that aggregates content from all `textAreas`.
-        // When `textArea.setText(replacedText)` is called in `applyAbbreviation`,
-        // it will trigger the `GDSEMR_frame`'s listener, thus updating the output area.
-        // Therefore, no explicit update to `outputArea` is needed here to avoid redundancy
-        // and potential circular updates.
     }
 
     // --- Optional Public Methods (for managing abbreviations dynamically) ---
 
     /**
-     * Adds a new abbreviation or updates an existing one.
-     * The key is converted to lowercase to ensure case-insensitive matching.
-     * @param key The abbreviation trigger (e.g., "dx").
+     * Adds a new abbreviation or updates an existing one in both the map and the database.
+     * The key is formatted to include a colon and trailing space.
+     * @param key The abbreviation trigger (e.g., ":dx ").
      * @param value The full text (e.g., "Diagnosis").
      */
     public void addAbbreviation(String key, String value) {
-        this.abbreviations.put(key.toLowerCase(), value);
+        // Ensure the key starts with ":" and ends with " "
+        String formattedKey = key.startsWith(":") ? key : ":" + key;
+        formattedKey = formattedKey.endsWith(" ") ? formattedKey : formattedKey + " ";
+        
+        // Update the database
+        try (Connection conn = DriverManager.getConnection(DB_PATH);
+             PreparedStatement pstmt = conn.prepareStatement("INSERT OR REPLACE INTO abbreviations (key, value) VALUES (?, ?)")) {
+            pstmt.setString(1, formattedKey);
+            pstmt.setString(2, value);
+            pstmt.executeUpdate();
+            abbreviations.put(formattedKey, value);
+        } catch (SQLException e) {
+            System.err.println("Failed to add abbreviation to database: " + e.getMessage());
+        }
     }
 
     /**
-     * Removes an abbreviation from the map.
-     * The key is converted to lowercase to ensure consistency.
+     * Removes an abbreviation from both the map and the database.
+     * The key is formatted to include a colon and trailing space.
      * @param key The abbreviation trigger to remove.
      */
     public void removeAbbreviation(String key) {
-        this.abbreviations.remove(key.toLowerCase());
+        String formattedKey = key.startsWith(":") ? key : ":" + key;
+        formattedKey = formattedKey.endsWith(" ") ? formattedKey : formattedKey + " ";
+        
+        // Remove from the database
+        try (Connection conn = DriverManager.getConnection(DB_PATH);
+             PreparedStatement pstmt = conn.prepareStatement("DELETE FROM abbreviations WHERE key = ?")) {
+            pstmt.setString(1, formattedKey);
+            pstmt.executeUpdate();
+            abbreviations.remove(formattedKey);
+        } catch (SQLException e) {
+            System.err.println("Failed to remove abbreviation from database: " + e.getMessage());
+        }
     }
 
     /**
      * Retrieves the current map of abbreviations.
-     * @return A unmodifiable map of abbreviations.
+     * @return An unmodifiable map of abbreviations.
      */
     public Map<String, String> getAbbreviations() {
         return java.util.Collections.unmodifiableMap(abbreviations);
     }
 
-	public void refreshAbbreviations() {
-		// TODO Auto-generated method stub
-		
-	}
+    /**
+     * Refreshes the abbreviations map by reloading from the database.
+     */
+    public void refreshAbbreviations() {
+        abbreviations.clear();
+        try (Connection conn = DriverManager.getConnection(DB_PATH);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT key, value FROM abbreviations")) {
+            while (rs.next()) {
+                abbreviations.put(rs.getString("key"), rs.getString("value"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Failed to refresh abbreviations from database: " + e.getMessage());
+        }
+    }
 }

@@ -8,6 +8,15 @@ plugins {
     id("org.openjfx.javafxplugin") version "0.1.0" // Kotlin DSL syntax for applying plugins by ID and version
 }
 
+sourceSets {
+    main {
+        resources {
+            srcDirs("src/main/resources")
+        }
+    }
+}
+
+
 // Configure the Java toolchain to ensure consistency with your installed JDK.
 // This is important for Gradle to pick up the correct Java 21 version.
 java {
@@ -47,9 +56,9 @@ application {
 dependencies {
     // Example: implementation("com.google.code.gson:gson:2.10.1")
     // Use JUnit Jupiter for testing.
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0") // Kotlin DSL: use parentheses and double quotes
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0") // Kotlin DSL: use parentheses and double quotes
-    implementation 'org.xerial:sqlite-jdbc:3.45.3.0'
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+    implementation("org.xerial:sqlite-jdbc:3.45.3.0")
 }
 
 // Configure the 'test' task to use JUnit Platform.
