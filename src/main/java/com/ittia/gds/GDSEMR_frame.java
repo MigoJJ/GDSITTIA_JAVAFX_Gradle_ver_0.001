@@ -1,6 +1,7 @@
 package com.ittia.gds;
 
 import com.ittia.gds.db.DatabaseManager;
+import com.ittia.gds.ui.mainframe.buttons.GDSFrameButtonExe; // Import the new class
 import com.ittia.gds.ui.mainframe.changestring.AbbreviationManagerUI;
 import com.ittia.gds.ui.mainframe.changestring.AbbreviationsMain;
 
@@ -73,17 +74,10 @@ public class GDSEMR_frame extends Application {
         tempOutputArea.setPrefRowCount(40);
         tempOutputArea.setStyle("-fx-border-color: #d0d0d0; -fx-border-width: 1px; -fx-border-radius: 5px;");
 
-        // --- NEW ABBREVIATION SYSTEM INTEGRATION ---
         DatabaseManager dbManager = new DatabaseManager();
-
-        // Pass TEXT_AREA_TITLES to AbbreviationsMain constructor
         AbbreviationsMain abbreviationHandler = new AbbreviationsMain(textAreas, tempOutputArea, TEXT_AREA_TITLES);
-
         AbbreviationManagerUI abbreviationManagerUI = new AbbreviationManagerUI(abbreviationHandler, dbManager);
-        // --- END NEW ABBREVIATION SYSTEM INTEGRATION ---
 
-        // The listener for combining text into the output area remains.
-        // This listener is conceptually distinct from the abbreviation expansion.
         for (TextArea ta : textAreas) {
             ta.textProperty().addListener((obs, oldVal, newVal) -> {
                 StringBuilder sb = new StringBuilder();
@@ -147,6 +141,12 @@ public class GDSEMR_frame extends Application {
         splitPane.getItems().addAll(leftOutputPane, rightInputGrid);
         splitPane.setDividerPositions(0.5);
 
+        // ======================= BUTTON SECTION START =======================
+
+        // --- Create an instance of the button executor ---
+        GDSFrameButtonExe buttonExecutor = new GDSFrameButtonExe(textAreas, tempOutputArea);
+
+        // --- North Panel ---
         HBox northPanel = new HBox(15);
         northPanel.setPadding(new Insets(10, 15, 10, 15));
         northPanel.setAlignment(Pos.CENTER_RIGHT);
@@ -156,28 +156,47 @@ public class GDSEMR_frame extends Application {
         manageAbbrBtn.setStyle("-fx-background-color: #f0ad4e; -fx-text-fill: white; -fx-font-weight: bold;");
         manageAbbrBtn.setOnAction(e -> abbreviationManagerUI.display());
         northPanel.getChildren().add(manageAbbrBtn);
-                
+
+        // --- NEW: Add ICD11 Button ---
+        Button icdButton = new Button("ICD11");
+        icdButton.setStyle("-fx-background-color: #5bc0de; -fx-text-fill: white; -fx-font-weight: bold;");
+        icdButton.setOnAction(e -> {
+            System.out.println("ICD11 button clicked.");
+            // TODO: Implement ICD11 functionality
+        });
+        northPanel.getChildren().add(icdButton);
+
+        // --- NEW: Add Laboratory Button ---
+        Button labButton = new Button("Laboratory");
+        labButton.setStyle("-fx-background-color: #5bc0de; -fx-text-fill: white; -fx-font-weight: bold;");
+        labButton.setOnAction(e -> {
+            System.out.println("Laboratory button clicked.");
+            // TODO: Implement Laboratory functionality
+        });
+        northPanel.getChildren().add(labButton);
+
+
+        String[] northButtonTitles = {"SaveRescue", "Load", "Clear","Exit"};
+        for (String title : northButtonTitles) {
+            Button btn = createStyledButton(title, "#5cb85c", "#4cae4c");
+            buttonExecutor.attach(btn, title); // Use the executor to attach actions
+            northPanel.getChildren().add(btn);
+        }
+
+        // --- South Panel ---
         HBox southPanel = new HBox(15);
         southPanel.setPadding(new Insets(10, 15, 10, 15));
         southPanel.setAlignment(Pos.CENTER_LEFT);
         southPanel.setStyle("-fx-background-color: #e8e8e8;");
 
-        String[] btns = {"Save", "Load", "Clear", "Submit"};
-        for (String name : btns) {
-            Button b1 = new Button(name);
-            b1.setPrefWidth(80);
-            b1.setStyle("-fx-background-color: #5cb85c; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;");
-            b1.setOnMouseEntered(e -> b1.setStyle("-fx-background-color: #4cae4c; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;"));
-            b1.setOnMouseExited(e -> b1.setStyle("-fx-background-color: #5cb85c; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;"));
-            northPanel.getChildren().add(b1);
-
-            Button b2 = new Button(name);
-            b2.setPrefWidth(80);
-            b2.setStyle("-fx-background-color: #0275d8; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;");
-            b2.setOnMouseEntered(e -> b2.setStyle("-fx-background-color: #025aa5; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;"));
-            b2.setOnMouseExited(e -> b2.setStyle("-fx-background-color: #0275d8; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;"));
-            southPanel.getChildren().add(b2);
+        String[] southButtonTitles = {"Save", "Load", "Clear", "CE", "Submit"};
+        for (String title : southButtonTitles) {
+            Button btn = createStyledButton(title, "#0275d8", "#025aa5");
+            buttonExecutor.attach(btn, title); // Use the executor to attach actions
+            southPanel.getChildren().add(btn);
         }
+
+        // ======================== BUTTON SECTION END ========================
 
         BorderPane root = new BorderPane();
         root.setCenter(splitPane);
@@ -191,6 +210,17 @@ public class GDSEMR_frame extends Application {
         primaryStage.setScene(scene);
         primaryStage.setOnCloseRequest(e -> System.exit(0));
         primaryStage.show();
+    }
+
+    private Button createStyledButton(String text, String baseColor, String hoverColor) {
+        Button button = new Button(text);
+        button.setPrefWidth(80);
+        final String baseStyle = String.format("-fx-background-color: %s; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;", baseColor);
+        final String hoverStyle = String.format("-fx-background-color: %s; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-radius: 5px; -fx-background-radius: 5px;", hoverColor);
+        button.setStyle(baseStyle);
+        button.setOnMouseEntered(e -> button.setStyle(hoverStyle));
+        button.setOnMouseExited(e -> button.setStyle(baseStyle));
+        return button;
     }
 
     public static void main(String[] args) {
