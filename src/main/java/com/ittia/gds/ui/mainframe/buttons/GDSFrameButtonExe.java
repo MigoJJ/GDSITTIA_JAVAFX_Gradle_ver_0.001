@@ -1,9 +1,12 @@
 package com.ittia.gds.ui.mainframe.buttons;
 
+import com.ittia.gds.GDSittiaEntry;
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.MouseButton;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 
 /**
@@ -12,23 +15,25 @@ import javafx.util.Duration;
  */
 public class GDSFrameButtonExe {
 
+    // The main application window.
+    private final Stage primaryStage;
+
     // UI components from the main frame that the buttons will interact with.
     private final TextArea[] textAreas;
     private final TextArea tempOutputArea;
 
-    // A pause transition to help differentiate between single and double clicks.
-    // A single click action is delayed slightly. If a second click occurs in that
-    // time, the single-click action is cancelled, and a double-click is registered.
     private final PauseTransition clickTimer = new PauseTransition(Duration.millis(250));
     private int clickCount = 0;
 
     /**
      * Constructor for the button executor.
      *
+     * @param primaryStage   The main application window (Stage).
      * @param textAreas      The array of input text areas from the main frame.
      * @param tempOutputArea The main output text area from the main frame.
      */
-    public GDSFrameButtonExe(TextArea[] textAreas, TextArea tempOutputArea) {
+    public GDSFrameButtonExe(Stage primaryStage, TextArea[] textAreas, TextArea tempOutputArea) {
+        this.primaryStage = primaryStage;
         this.textAreas = textAreas;
         this.tempOutputArea = tempOutputArea;
     }
@@ -41,22 +46,18 @@ public class GDSFrameButtonExe {
      */
     public void attach(Button button, String actionCommand) {
         button.setOnMouseClicked(event -> {
-            // We only care about the primary mouse button (usually the left button).
             if (event.getButton() == MouseButton.PRIMARY) {
                 clickCount++;
                 if (clickCount == 1) {
-                    // On the first click, start the timer.
                     clickTimer.setOnFinished(e -> {
-                        // If the timer finishes, it was a single click.
-                        executeAction(actionCommand, false); // false for single-click
-                        clickCount = 0; // Reset for the next click sequence.
+                        executeAction(actionCommand, false); // Single-click
+                        clickCount = 0;
                     });
                     clickTimer.playFromStart();
                 } else if (clickCount == 2) {
-                    // If a second click happens before the timer finishes, it's a double click.
-                    clickTimer.stop(); // Cancel the pending single-click action.
-                    executeAction(actionCommand, true); // true for double-click
-                    clickCount = 0; // Reset for the next click sequence.
+                    clickTimer.stop(); // Cancel single-click
+                    executeAction(actionCommand, true); // Double-click
+                    clickCount = 0;
                 }
             }
         });
@@ -73,28 +74,17 @@ public class GDSFrameButtonExe {
         System.out.println(actionCommand + " button: " + clickType + " detected.");
 
         switch (actionCommand) {
-            case "SaveRescue":
-                if (isDoubleClick) {
-                    // TODO: Add double-click save logic (e.g., "Save As...")
-                } else {
-                    // TODO: Add single-click save logic (e.g., standard save)
-                }
+            case "SaveRescue": // Renamed from SaveRescue for consistency
+                // TODO: Add save logic
                 break;
 
             case "Load":
-                if (isDoubleClick) {
-                    // TODO: Add double-click load logic
-                } else {
-                    // TODO: Add single-click load logic
-                }
+                // TODO: Add load logic
                 break;
 
             case "Clear":
-                // Typically, clear actions are the same for single or double-click.
                 for (TextArea ta : textAreas) {
-                    if (ta != null) {
-                        ta.clear();
-                    }
+                    if (ta != null) ta.clear();
                 }
                 tempOutputArea.clear();
                 System.out.println("All fields cleared.");
@@ -102,17 +92,29 @@ public class GDSFrameButtonExe {
 
             case "Exit":
                 if (isDoubleClick) {
-                	System.exit(0);
+                    // Double-click exits the entire program.
+                    System.out.println("Exiting application.");
+                    System.exit(0);
                 } else {
-                	System.exit(0);                }
-                break;
+                    // Single-click closes the current window and opens the main entry window.
+                    System.out.println("Returning to main entry screen.");
+                    primaryStage.close();
 
-            case "...":
-                if (isDoubleClick) {
-                    // TODO: Add double-click submit logic (e.g., submit with high priority)
-                } else {
-                    // TODO: Add single-click submit logic
+                    // Defer the creation of the new stage to ensure the current UI event is complete.
+                    Platform.runLater(() -> {
+                        try {
+                            new GDSittiaEntry().start(new Stage());
+                        } catch (Exception e) {
+                            System.err.println("Failed to open main entry screen.");
+                            e.printStackTrace();
+                        }
+                    });
                 }
+                break;
+            
+            case "CE":
+            case "Submit":
+                 // TODO: Add logic for these buttons
                 break;
 
             default:

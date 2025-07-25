@@ -1,7 +1,5 @@
 package com.ittia.gds.db;
 
-import com.ittia.gds.ui.model.Abbreviation;
-
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
