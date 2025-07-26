@@ -1,5 +1,8 @@
-package com.ittia.gds.ui.mainframe.buttons;
+// Updated LoadDiseaseCodeViewer.java
+// Changes: URI -> GDS, Pains -> Etc in buttons and category filters
+// This file assumes the rest of the class remains unchanged.
 
+package com.ittia.gds.ui.mainframe.buttons;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -11,7 +14,6 @@ import java.awt.event.ActionListener;
 import java.sql.*;
 import java.util.Vector;
 import java.util.regex.PatternSyntaxException;
-
 /**
  * A Java Swing application to display various ICD-10 disease codes from SQLite database.
  * The user can select a disease category from the buttons at the bottom,
@@ -88,7 +90,8 @@ public class LoadDiseaseCodeViewer extends JFrame {
         southPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         
         // Define button names - added Load All, Add and Delete buttons
-        String[] buttonLabels = {"Load All", "DM", "Thyroid", "Lipid", "Osteoporosis", "URI", "Pains", "Add", "Edit", "Delete", "Quit"};
+    String[] buttonLabels = {"Load All", "DM", "Thyroid", "Lipid", "Osteoporosis", "GDS", "Etc", "Add", "Edit", "Delete", "Quit"};
+
         ButtonClickListener buttonClickListener = new ButtonClickListener();
         
         for (String label : buttonLabels) {
@@ -217,7 +220,6 @@ public class LoadDiseaseCodeViewer extends JFrame {
             		{"E10.5", "    Type 1 Diabetes Mellitus With circulatory complications", "DM"},
             		{"E10.6", "    Type 1 Diabetes Mellitus With other specified complications", "DM"},
             		{"E10.8", "    Type 1 Diabetes Mellitus With unspecified complications", "DM"},
-
             		{"E11", "Type 2 Diabetes Mellitus", "DM"},
             		{"E11.9", "    Type 2 Diabetes Mellitus Without complications", "DM"},
             		{"E11.2", "    Type 2 Diabetes Mellitus With kidney complications (nephropathy)", "DM"},
@@ -226,34 +228,27 @@ public class LoadDiseaseCodeViewer extends JFrame {
             		{"E11.5", "    Type 2 Diabetes Mellitus With circulatory complications", "DM"},
             		{"E11.6", "    Type 2 Diabetes Mellitus With other specified complications", "DM"},
             		{"E11.8", "    Type 2 Diabetes Mellitus With unspecified complications", "DM"},
-
             		{"E12", "Malnutrition-related Diabetes Mellitus", "DM"},
             		{"E13", "Other specified Diabetes Mellitus", "DM"},
             		{"E08", "Diabetes Mellitus Due to underlying condition", "DM"},
-
             		{"O24", "Diabetes Mellitus in pregnancy, childbirth, and puerperium", "DM"},
             		{"O24.0", "    Pre-existing Type 1 Diabetes Mellitus in pregnancy", "DM"},
             		{"O24.1", "    Pre-existing Type 2 Diabetes Mellitus in pregnancy", "DM"},
             		{"O24.4", "    Gestational Diabetes Mellitus", "DM"},
-
             		{"E00", "Congenital iodine-deficiency syndrome", "Thyroid"},
             		{"E01", "Iodine-deficiency related thyroid disorders", "Thyroid"},
             		{"E03", "Other hypothyroidism", "Thyroid"},
             		{"E03.9", "    Hypothyroidism, unspecified", "Thyroid"},
             		{"E03.0", "    Congenital hypothyroidism with diffuse goiter", "Thyroid"},
             		{"E03.1", "    Congenital hypothyroidism without goiter", "Thyroid"},
-
             		{"E05", "Thyrotoxicosis (hyperthyroidism)", "Thyroid"},
             		{"E05.0", "    Thyrotoxicosis with diffuse goiter (Graves’ disease)", "Thyroid"},
             		{"E05.9", "    Thyrotoxicosis, unspecified", "Thyroid"},
-
             		{"E06", "Thyroiditis", "Thyroid"},
             		{"E06.3", "    Autoimmune thyroiditis (Hashimoto’s thyroiditis)", "Thyroid"},
-
             		{"E07", "Other disorders of thyroid", "Thyroid"},
             		{"E07.9", "    Disorder of thyroid, unspecified", "Thyroid"},
             		{"E07.1", "Dyshormogenetic goiter", "Thyroid"},
-
             		{"E78", "Disorders of lipoprotein metabolism and other lipidemias", "Lipid"},
             		{"E78.0", "    Pure hypercholesterolemia", "Lipid"},
             		{"E78.1", "    Pure hyperglyceridemia", "Lipid"},
@@ -261,17 +256,13 @@ public class LoadDiseaseCodeViewer extends JFrame {
             		{"E78.5", "    Hyperlipidemia, unspecified", "Lipid"},
             		{"E78.6", "    Lipoprotein deficiency (HDL deficiency)", "Lipid"},
             		{"E78.9", "    Disorder of lipoprotein metabolism, unspecified", "Lipid"},
-
             		{"M80", "Osteoporosis with current pathological fracture", "Osteoporosis"},
             		{"M80.0", "    Age-related osteoporosis with current pathological fracture", "Osteoporosis"},
             		{"M80.8", "    Other osteoporosis with current pathological fracture", "Osteoporosis"},
-
             		{"M81", "Osteoporosis without pathological fracture", "Osteoporosis"},
             		{"M81.0", "    Age-related osteoporosis without current pathological fracture", "Osteoporosis"},
             		{"M81.8", "    Other osteoporosis without current pathological fracture", "Osteoporosis"},
-
             		{"M82", "Osteoporosis in diseases classified elsewhere (secondary)", "Osteoporosis"},
-
             		{"E20", "Hypoparathyroidism", "Endocrine"},
             		{"E21", "Hyperparathyroidism and other disorders of parathyroid gland", "Endocrine"},
             		{"E22", "Hyperfunction of pituitary gland", "Endocrine"},
@@ -282,15 +273,12 @@ public class LoadDiseaseCodeViewer extends JFrame {
             		{"E31.9", "    Polyglandular dysfunction, unspecified", "Endocrine"},
             		{"E34", "Other endocrine disorders", "Endocrine"},
             		{"E34.9", "    Endocrine disorder, unspecified", "Endocrine"},
-
             		{"E89", "Postprocedural endocrine and metabolic complications", "Endocrine"},
             		{"E89.0", "    Postprocedural hypothyroidism", "Endocrine"},
-
             };
             
             // Thyroid Data
             String[][] thyroidData = {
-
                 {"C73", "Thyroid Cancer (Malignant neoplasm)", "Thyroid"}
             };
             
@@ -314,8 +302,8 @@ public class LoadDiseaseCodeViewer extends JFrame {
             String[][] otherData = {
                 {"Info", "Lipid data not yet loaded.", "Lipid"},
                 {"Info", "Osteoporosis data not yet loaded.", "Osteoporosis"},
-                {"Info", "URI data not yet loaded.", "URI"},
-                {"Info", "Pains data not yet loaded.", "Pains"}
+                {"Info", "GDS data not yet loaded.", "GDS"},
+                {"Info", "Etc data not yet loaded.", "Etc"}
             };
             
             for (String[] row : otherData) {
