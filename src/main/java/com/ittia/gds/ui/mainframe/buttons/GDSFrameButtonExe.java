@@ -79,7 +79,7 @@ public class GDSFrameButtonExe {
                 break;
 
             case "Load":
-                // TODO: Add load logic
+                LoadDiseaseCodeViewer.main(null);// TODO: Add load logic
                 break;
 
             case "Clear":
